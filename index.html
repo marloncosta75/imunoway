@@ -1746,13 +1746,8 @@ function savePaciente(){
   filteredPts = [...PATIENTS];
 
   // Save to Google Sheets
-  // Save to Sheets (no-cors = fire and forget, data will save even without response)
-  fetch(SHEETS_URL, {
-    method:'POST',
-    mode:'no-cors',
-    headers:{'Content-Type':'text/plain'},
-    body:JSON.stringify({action:'add', data:newPt})
-  }).catch(function(e){ console.warn('Sheets save:', e); });
+  // Save to Sheets via GET (bypasses CORS)
+  sheetsRequest({action:'add', data:newPt});
 
   // ── Clear all form fields ────────────────────────────────────
   clearFormFields();
@@ -2511,13 +2506,8 @@ function executeDelete(){
     renderTable(filteredPts);
     buildCharts();
     showToast('🗑️ Paciente "'+nome+'" excluído.');
-    // Delete from Sheets
-    fetch(SHEETS_URL, {
-      method:'POST',
-      mode:'no-cors',
-      headers:{'Content-Type':'text/plain'},
-      body:JSON.stringify({action:'delete', id:delId})
-    }).catch(function(e){ console.warn('Sheets delete:', e); });
+    // Delete from Sheets via GET
+    sheetsRequest({action:'delete', id:delId});
   }
   closeDeleteModal();
 }
@@ -2852,6 +2842,19 @@ function saveNewUser(){
   var modal = document.getElementById('new-user-modal');
   if(modal) modal.style.display = 'none';
   showToast('✅ Usuário "'+nome+'" adicionado com sucesso!');
+}
+
+
+// Send data to Sheets via GET request (avoids CORS POST issues)
+function sheetsRequest(payload){
+  var url = SHEETS_URL + '?payload=' + encodeURIComponent(JSON.stringify(payload));
+  // Use fetch with no-cors GET - Apps Script processes it even without readable response
+  fetch(url, {mode:'no-cors'})
+    .catch(function(){
+      // Fallback: use Image tag GET (always works, no CORS)
+      var img = new Image();
+      img.src = url;
+    });
 }
 
 // Expose critical functions on window so inline onclick always works
