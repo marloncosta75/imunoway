@@ -1124,32 +1124,85 @@ function fmtDate(s){if(!s)return '—';const d=new Date(s);if(isNaN(d))return s;
 function daysSince(s){if(!s)return null;const d=new Date(s);if(isNaN(d))return null;return Math.floor((new Date()-d)/(1000*60*60*24));}
 function calcPeriod(s){const d=daysSince(s);if(d===null)return '—';if(d<30)return d+' dias';const m=Math.floor(d/30.44);return m<2?'1 mês':m+' meses';}
 
-const PATIENTS = [];
-let _sheetsLoaded = false;
+const PATIENTS = [
+  {id:1,nome:'Isis de Oliveira Magalhães',dn:excelDate(42954),idade:'7 anos',sexo:'F',tel:'',email:'',mae:'',pai:'',plano:'Amil',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Convênio',acesso:'Assim Saúde',ultConsulta:excelDate(45932),status:'Em uso',med:'Dupixent (dupilumabe)',lab:'Sanofi / Regeneron',dose:'300 mg',intervalo:'4 semanas',indicacao:'Asma grave',cid:'J45.9',igeEsp:'IgE DP/BL',igeTotal:'1708',eosino:'698',posologia:''},
+  {id:2,nome:'Lorenzo Emeliano Estable da Silva',dn:excelDate(42549),idade:'8 anos',sexo:'M',tel:'',email:'',mae:'',pai:'',plano:'Assim Saúde',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Convênio',acesso:'Assim Saúde',ultConsulta:excelDate(46006),status:'Em uso',med:'Nucala (mepolizumabe)',lab:'GSK',dose:'40 mg',intervalo:'4 semanas',indicacao:'Asma grave',cid:'J45.9',igeEsp:'IgE DP/BL',igeTotal:'1877',eosino:'865',posologia:''},
+  {id:3,nome:'Lucas de Oliveira Brandao',dn:excelDate(40964),idade:'12 anos',sexo:'M',tel:'',email:'',mae:'',pai:'',plano:'Assim Saúde',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Convênio',acesso:'Assim Saúde',ultConsulta:excelDate(45894),status:'Em uso',med:'Dupixent (dupilumabe)',lab:'Sanofi / Regeneron',dose:'200 mg',intervalo:'2 semanas',indicacao:'Asma grave',cid:'J45.9',igeEsp:'IgE DP/BL',igeTotal:'468',eosino:'325',posologia:''},
+  {id:4,nome:'Bernardo Nunes de Abreu',dn:excelDate(44699),idade:'3 anos',sexo:'M',tel:'(21) 97625-4081',email:'',mae:'',pai:'',plano:'Assim Saúde',uf:'RJ',cidade:'São Gonçalo',bairro:'',tipo:'Convênio',acesso:'Assim Saúde',ultConsulta:excelDate(46030),status:'Em uso',med:'Dupixent (dupilumabe)',lab:'Sanofi / Regeneron',dose:'200 mg',intervalo:'4 semanas',indicacao:'Dermatite atópica moderada a grave',cid:'L20.9',igeEsp:'IgE DP/BL',igeTotal:'3389',eosino:'1080',posologia:''},
+  {id:5,nome:'Sara de Souza Gomes',dn:excelDate(37019),idade:'24 anos',sexo:'F',tel:'',email:'',mae:'',pai:'',plano:'Sem plano',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Particular',acesso:'SUS',ultConsulta:excelDate(45994),status:'Em uso',med:'Xolair (omalizumabe)',lab:'Novartis',dose:'300 mg',intervalo:'4 semanas',indicacao:'Urticária crônica espontânea',cid:'L50.1',igeEsp:'xxxxx',igeTotal:'173',eosino:'123',posologia:''},
+  {id:6,nome:'Conor Hudson',dn:excelDate(34688),idade:'30 anos',sexo:'M',tel:'',email:'',mae:'',pai:'',plano:'Sem plano',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Particular',acesso:'Recursos próprios',ultConsulta:excelDate(45957),status:'Em análise',med:'Dupixent (dupilumabe)',lab:'Sanofi / Regeneron',dose:'300 mg',intervalo:'2 semanas',indicacao:'Dermatite atópica moderada a grave',cid:'L20.9',igeEsp:'IgE DP/BL',igeTotal:'68',eosino:'398',posologia:''},
+  {id:7,nome:'Maria Quintanilha Caldas',dn:excelDate(43598),idade:'6 anos',sexo:'F',tel:'',email:'',mae:'',pai:'',plano:'Porto Seguro Saúde',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Particular',acesso:'Plano de Saúde',ultConsulta:excelDate(45833),status:'Desistiu',med:'Dupixent (dupilumabe)',lab:'Sanofi / Regeneron',dose:'200 mg',intervalo:'2 semanas',indicacao:'Asma alérgica grave',cid:'J45.0',igeEsp:'IgE DP/BL',igeTotal:'82',eosino:'210',posologia:''},
+  {id:8,nome:'Maria Luiza Ferreira Dias',dn:excelDate(41504),idade:'11 anos',sexo:'F',tel:'',email:'',mae:'',pai:'',plano:'Bradesco Saúde',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Particular',acesso:'Plano de Saúde',ultConsulta:excelDate(45833),status:'Desistiu',med:'Dupixent (dupilumabe)',lab:'Sanofi / Regeneron',dose:'200 mg',intervalo:'2 semanas',indicacao:'Asma grave',cid:'J45.9',igeEsp:'',igeTotal:'',eosino:'',posologia:''},
+  {id:9,nome:'Janice de Oliveira Soares',dn:excelDate(32147),idade:'37 anos',sexo:'F',tel:'',email:'',mae:'',pai:'',plano:'Assim Saúde',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Convênio',acesso:'Assim Saúde',ultConsulta:excelDate(45952),status:'Em uso',med:'Dupixent (dupilumabe)',lab:'Sanofi / Regeneron',dose:'300 mg',intervalo:'2 semanas',indicacao:'Dermatite atópica moderada a grave',cid:'L20.9',igeEsp:'',igeTotal:'718',eosino:'327',posologia:''},
+  {id:10,nome:'Sofia Assis Eckhardt',dn:excelDate(41037),idade:'13 anos',sexo:'F',tel:'',email:'',mae:'',pai:'',plano:'Bradesco Saúde',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Particular',acesso:'Plano de Saúde',ultConsulta:excelDate(45838),status:'Em uso',med:'Dupixent (dupilumabe)',lab:'Sanofi / Regeneron',dose:'300 mg',intervalo:'2 semanas',indicacao:'Dermatite atópica moderada a grave',cid:'L20.9',igeEsp:'',igeTotal:'',eosino:'',posologia:''},
+  {id:11,nome:'Maite Isseki Almeida',dn:excelDate(43645),idade:'6 anos',sexo:'F',tel:'',email:'',mae:'',pai:'',plano:'Sem plano',uf:'RJ',cidade:'Maricá',bairro:'',tipo:'Particular',acesso:'SUS',ultConsulta:excelDate(45854),status:'Aguardando liberação',med:'Nucala (mepolizumabe)',lab:'GSK',dose:'40 mg',intervalo:'4 semanas',indicacao:'Asma grave',cid:'J45.9',igeEsp:'IgE DP 1,25/BL',igeTotal:'384',eosino:'1361',posologia:''},
+  {id:12,nome:'Miguel Leandro Souza de Sa',dn:excelDate(42626),idade:'9 anos',sexo:'M',tel:'',email:'',mae:'',pai:'',plano:'',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Particular',acesso:'Recursos próprios',ultConsulta:excelDate(45896),status:'Em uso',med:'Dupixent (dupilumabe)',lab:'Sanofi / Regeneron',dose:'200 mg',intervalo:'2 semanas',indicacao:'Asma grave',cid:'J45.9',igeEsp:'IgE DP',igeTotal:'194',eosino:'350',posologia:''},
+  {id:13,nome:'Caio Leal Fonseca',dn:excelDate(36079),idade:'',sexo:'M',tel:'',email:'',mae:'',pai:'',plano:'Amil',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Particular',acesso:'Plano de Saúde',ultConsulta:excelDate(46007),status:'Em uso',med:'Dupixent (dupilumabe)',lab:'Sanofi / Regeneron',dose:'300 mg',intervalo:'2 semanas',indicacao:'Esofagite eosinofílica',cid:'K20',igeEsp:'IgE DP/BL/alimentos',igeTotal:'',eosino:'165',posologia:''},
+  {id:14,nome:'Miguel Antunes Rangel',dn:excelDate(43047),idade:'7 anos',sexo:'M',tel:'',email:'',mae:'',pai:'',plano:'Assim Saúde',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Convênio',acesso:'Assim Saúde',ultConsulta:excelDate(46030),status:'Em uso',med:'Nucala (mepolizumabe)',lab:'GSK',dose:'40 mg',intervalo:'4 semanas',indicacao:'Asma grave',cid:'J45.9',igeEsp:'IgE DP/BL',igeTotal:'93',eosino:'137',posologia:''},
+  {id:15,nome:'Tarcisio Lopes Siqueira',dn:'',idade:'25 anos',sexo:'M',tel:'',email:'',mae:'',pai:'',plano:'Bradesco Saúde',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Particular',acesso:'Clíged',ultConsulta:excelDate(45916),status:'Em análise',med:'Dupixent (dupilumabe)',lab:'Sanofi / Regeneron',dose:'300 mg',intervalo:'2 semanas',indicacao:'Dermatite atópica moderada a grave',cid:'L20.9',igeEsp:'IgE DP/BL',igeTotal:'2220',eosino:'518',posologia:''},
+  {id:16,nome:'Murilo de Paula Vieira',dn:excelDate(42464),idade:'9 anos',sexo:'M',tel:'',email:'',mae:'',pai:'',plano:'Unimed',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Particular',acesso:'Plano de Saúde',ultConsulta:excelDate(46037),status:'Em uso',med:'Xolair (omalizumabe)',lab:'Novartis',dose:'300 mg',intervalo:'2 semanas',indicacao:'Asma alérgica grave',cid:'J45.0',igeEsp:'IgE DP/BL',igeTotal:'1670',eosino:'812',feno:'487',posologia:''},
+  {id:17,nome:'Thatyana Lourenço Camelo',dn:excelDate(29665),idade:'44 anos',sexo:'F',tel:'',email:'',mae:'',pai:'',plano:'Assim Saúde',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Convênio',acesso:'Oncoclínicas',ultConsulta:excelDate(45995),status:'Em uso',med:'Nucala (mepolizumabe)',lab:'GSK',dose:'100 mg',intervalo:'4 semanas',indicacao:'Asma eosinofílica grave',cid:'J45.9',igeEsp:'Negativos',igeTotal:'92',eosino:'490',feno:'76',posologia:''},
+  {id:18,nome:'Manuela Couto DA COSTA',dn:excelDate(40091),idade:'',sexo:'F',tel:'',email:'',mae:'',pai:'',plano:'Unimed',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Particular',acesso:'Plano de Saúde',ultConsulta:excelDate(45929),status:'Em uso',med:'Dupixent (dupilumabe)',lab:'Sanofi / Regeneron',dose:'300 mg',intervalo:'2 semanas',indicacao:'Dermatite atópica moderada a grave',cid:'L20.9',igeEsp:'IgE DP/BL',igeTotal:'2500',eosino:'444',feno:'432',posologia:''},
+  {id:19,nome:'Marta Rocha Couto',dn:excelDate(29608),idade:'',sexo:'F',tel:'',email:'',mae:'',pai:'',plano:'Unimed',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Particular',acesso:'Plano de Saúde',ultConsulta:excelDate(45831),status:'Em uso',med:'Dupixent (dupilumabe)',lab:'Sanofi / Regeneron',dose:'300 mg',intervalo:'2 semanas',indicacao:'Dermatite atópica moderada a grave',cid:'L20.9',igeEsp:'IgE DP/BL',igeTotal:'2500',eosino:'639',posologia:''},
+  {id:20,nome:'Millena da Silva Marins',dn:excelDate(43033),idade:'',sexo:'F',tel:'',email:'',mae:'',pai:'',plano:'Assim Saúde',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Convênio',acesso:'Assim Saúde',ultConsulta:excelDate(45967),status:'Em uso',med:'Dupixent (dupilumabe)',lab:'Sanofi / Regeneron',dose:'200 mg',intervalo:'2 semanas',indicacao:'Prurigo nodular',cid:'L28.1',igeEsp:'IgE DP/BL',igeTotal:'7215',eosino:'488',feno:'722',posologia:''},
+  {id:21,nome:'Julye da Silva',dn:excelDate(41617),idade:'',sexo:'F',tel:'',email:'',mae:'',pai:'',plano:'Unimed',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Particular',acesso:'Plano de Saúde',ultConsulta:excelDate(46029),status:'Em uso',med:'Dupixent (dupilumabe)',lab:'Sanofi / Regeneron',dose:'200 mg',intervalo:'2 semanas',indicacao:'Prurigo nodular',cid:'L28.1',igeEsp:'Negativos',igeTotal:'',eosino:'142',posologia:''},
+  {id:22,nome:'Miguel Joaquim Costa do Nascimento',dn:excelDate(42170),idade:'',sexo:'M',tel:'',email:'',mae:'',pai:'',plano:'Unimed',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Particular',acesso:'Plano de Saúde',ultConsulta:excelDate(46029),status:'Em uso',med:'Dupixent (dupilumabe)',lab:'Sanofi / Regeneron',dose:'200 mg',intervalo:'2 semanas',indicacao:'Asma grave',cid:'J45.9',igeEsp:'IgE DP/BL',igeTotal:'217',igeUlt:'1282',eosino:'240',feno:'340',posologia:''},
+  {id:23,nome:'Gabriel Basilio Santos Pinto',dn:excelDate(41367),idade:'12',sexo:'M',tel:'',email:'',mae:'',pai:'',plano:'Assim Saúde',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Convênio',acesso:'Oncoclínicas',ultConsulta:excelDate(45860),status:'Em uso',med:'Dupixent (dupilumabe)',lab:'Sanofi / Regeneron',dose:'200 mg',intervalo:'2 semanas',indicacao:'Asma eosinofílica grave',cid:'J45.9',igeEsp:'IgE DP/BL',igeTotal:'456',eosino:'656',posologia:''},
+  {id:24,nome:'Arthur Aguiar Diniz',dn:excelDate(39324),idade:'17 anos',sexo:'M',tel:'(21) 98636-9894',email:'fernanda_aguiar79@yahoo.com.br',mae:'Fernanda',pai:'',plano:'Unimed',uf:'RJ',cidade:'São Gonçalo',bairro:'',tipo:'Particular',acesso:'Plano de Saúde',ultConsulta:excelDate(45847),status:'Em uso',med:'Xolair (omalizumabe)',lab:'Novartis',dose:'600 mg',intervalo:'4 semanas',indicacao:'Asma alérgica grave',cid:'J45.0',igeEsp:'DP+CÃO',igeTotal:'591',eosino:'1004',posologia:''},
+  {id:25,nome:'Icaro Mello Fonseca',dn:excelDate(43572),idade:'6 anos',sexo:'M',tel:'(21) 98791-8533',email:'fnancine-mello@live.com',mae:'Francine',pai:'',plano:'Unimed',uf:'RJ',cidade:'São Gonçalo',bairro:'',tipo:'Particular',acesso:'Plano de Saúde',ultConsulta:excelDate(45819),status:'Em uso',med:'Xolair (omalizumabe)',lab:'Novartis',dose:'450 mg',intervalo:'4 semanas',indicacao:'Asma alérgica grave',cid:'J45.0',igeEsp:'DP',igeTotal:'622',eosino:'675',posologia:''},
+  {id:26,nome:'Murilo de Oliveira Menezes',dn:excelDate(44596),idade:'3 anos',sexo:'M',tel:'(21) 99926-9561',email:'jennymary8@gmail.com',mae:'Jennifer',pai:'Fabiano',plano:'Sem plano',uf:'RJ',cidade:'Itaboraí',bairro:'',tipo:'Particular',acesso:'SUS',ultConsulta:excelDate(45834),status:'Aguardando liberação',med:'Dupixent (dupilumabe)',lab:'Sanofi / Regeneron',dose:'200 mg',intervalo:'4 semanas',indicacao:'Dermatite atópica moderada a grave',cid:'L20.9',igeEsp:'IgE DP/BL',igeTotal:'2500',eosino:'1022',posologia:''},
+  {id:27,nome:'Marcelle Laureano do Nascimento Lourenço',dn:excelDate(32104),idade:'37 anos',sexo:'F',tel:'(21) 99321-5531',email:'marcellelaureano@hotmail.com',mae:'',pai:'',plano:'Assim Saúde',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Convênio',acesso:'Oncomed',ultConsulta:excelDate(45736),status:'Em uso',med:'Xolair (omalizumabe)',lab:'Novartis',dose:'300 mg',intervalo:'4 semanas',indicacao:'Urticária crônica espontânea',cid:'L50.1',igeEsp:'n/a',igeTotal:'n/a',eosino:'n/a',posologia:''},
+  {id:28,nome:'Benicio Gregorio Couto da Silva',dn:excelDate(41753),idade:'11 anos',sexo:'M',tel:'(21) 97026-3618',email:'luanne.couto@hotmail.com',mae:'Luane',pai:'',plano:'Unimed',uf:'RJ',cidade:'São Gonçalo',bairro:'',tipo:'Particular',acesso:'Plano de Saúde',ultConsulta:excelDate(45736),status:'Em uso',med:'Dupixent (dupilumabe)',lab:'Sanofi / Regeneron',dose:'200 mg',intervalo:'2 semanas',indicacao:'Asma grave',cid:'J45.9',igeEsp:'DP+BL',igeTotal:'327',eosino:'310',feno:'36',posologia:''},
+  {id:29,nome:'Roberto Carlos Fialhos Ribeiro',dn:excelDate(19989),idade:'70 anos',sexo:'M',tel:'(21) 97003-3961',email:'',mae:'',pai:'',plano:'Hapvida',uf:'RJ',cidade:'Itaboraí',bairro:'',tipo:'Particular',acesso:'Plano de Saúde',ultConsulta:excelDate(45831),status:'Em uso',med:'Tezspire (tezepelumabe)',lab:'AstraZeneca',dose:'210 mg',intervalo:'4 semanas',indicacao:'Asma grave',cid:'J45.9',igeEsp:'DP',igeTotal:'148',eosino:'54',feno:'37',posologia:''},
+  {id:30,nome:'Isadora Viana Demézio da Silva',dn:excelDate(32114),idade:'37 anos',sexo:'F',tel:'',email:'',mae:'',pai:'',plano:'Amil',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Convênio',acesso:'Plano de Saúde',ultConsulta:excelDate(45853),status:'Em uso',med:'Dupixent (dupilumabe)',lab:'Sanofi / Regeneron',dose:'300 mg',intervalo:'2 semanas',indicacao:'Asma grave',cid:'J45.9',igeEsp:'DP',igeTotal:'2797',eosino:'872',feno:'N/A',posologia:''},
+  {id:31,nome:'Levi Ferraz Soares',dn:excelDate(44777),idade:'3 anos',sexo:'M',tel:'(21)98774-9826',email:'karolayne260412@gmail.com',mae:'Karolayne',pai:'',plano:'Bradesco Saúde',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Convênio',acesso:'Clíged',ultConsulta:excelDate(45856),status:'Em uso',med:'Dupixent (dupilumabe)',lab:'Sanofi / Regeneron',dose:'300 mg',intervalo:'4 semanas',indicacao:'Dermatite atópica moderada a grave',cid:'L20.9',igeEsp:'DP/BL/OVO/LV',igeTotal:'1528',eosino:'470',feno:'N/A',posologia:''},
+  {id:32,nome:'Bruna Cristina Coelho Pinho',dn:excelDate(33128),idade:'',sexo:'F',tel:'',email:'',mae:'',pai:'',plano:'Unimed',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Particular',acesso:'Plano de Saúde',ultConsulta:excelDate(45817),status:'Em uso',med:'Dupixent (dupilumabe)',lab:'Sanofi / Regeneron',dose:'300 mg',intervalo:'2 semanas',indicacao:'Dermatite atópica moderada a grave',cid:'L20.9',igeEsp:'IgE DP/BL',igeTotal:'649',igeUlt:'226',eosino:'642',feno:'438',feno2:'113',posologia:''},
+  {id:33,nome:'Gabriel da Silva Santos',dn:excelDate(41416),idade:'',sexo:'M',tel:'',email:'',mae:'',pai:'',plano:'Unimed',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Particular',acesso:'Plano de Saúde',ultConsulta:excelDate(46050),status:'Em uso',med:'Tezspire (tezepelumabe)',lab:'AstraZeneca',dose:'210 mg',intervalo:'4 semanas',indicacao:'Asma grave',cid:'J45.9',igeEsp:'IgE DP/BL',igeTotal:'1230',igeUlt:'1088',eosino:'517',feno:'241',posologia:''},
+  {id:34,nome:'Daniel Poubel Ribeiro',dn:excelDate(43097),idade:'',sexo:'M',tel:'',email:'',mae:'',pai:'',plano:'Unimed',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Particular',acesso:'Plano de Saúde',ultConsulta:excelDate(45966),status:'Em uso',med:'Dupixent (dupilumabe)',lab:'Sanofi / Regeneron',dose:'200 mg',intervalo:'2 semanas',indicacao:'Asma grave',cid:'J45.9',igeEsp:'IgE DP/BL',igeTotal:'3538',igeUlt:'895',eosino:'370',feno:'520',posologia:''},
+  {id:35,nome:'Angela Branco de Araujo Borges',dn:'',idade:'73',sexo:'F',tel:'',email:'',mae:'',pai:'',plano:'Prevent Senior',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Particular',acesso:'Plano de Saúde',ultConsulta:excelDate(45979),status:'Em uso',med:'Tezspire (tezepelumabe)',lab:'AstraZeneca',dose:'210 mg',intervalo:'4 semanas',indicacao:'Asma alérgica grave',cid:'J45.0',igeEsp:'DP',igeTotal:'336',eosino:'145',posologia:''},
+  {id:36,nome:'Carla Michelly Pereira Castelo Branco',dn:'',idade:'41 anos',sexo:'F',tel:'',email:'',mae:'',pai:'',plano:'Unimed',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Particular',acesso:'Plano de Saúde',ultConsulta:excelDate(45971),status:'Em uso',med:'Dupixent (dupilumabe)',lab:'Sanofi / Regeneron',dose:'300 mg',intervalo:'2 semanas',indicacao:'Asma alérgica grave',cid:'J45.0',igeEsp:'Dptero',igeTotal:'64',eosino:'62',posologia:''},
+  {id:37,nome:'Raquel Lugão de Souza Costa',dn:'',idade:'49 anos',sexo:'F',tel:'',email:'',mae:'',pai:'',plano:'Assim Saúde',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Convênio',acesso:'Oncomed',ultConsulta:excelDate(45918),status:'Em uso',med:'Dupixent (dupilumabe)',lab:'Sanofi / Regeneron',dose:'300 mg',intervalo:'2 semanas',indicacao:'Dermatite atópica moderada a grave',cid:'L20.9',igeEsp:'Neg',igeTotal:'166',eosino:'62',feno:'40',posologia:''},
+  {id:38,nome:'Andrea Carvalho',dn:'',idade:'',sexo:'F',tel:'',email:'',mae:'',pai:'',plano:'Sulamérica',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Particular',acesso:'Plano de Saúde',ultConsulta:'',status:'Em uso',med:'Xolair (omalizumabe)',lab:'Novartis',dose:'300 mg',intervalo:'2 semanas',indicacao:'Urticária crônica espontânea',cid:'L50.1',igeEsp:'',igeTotal:'',eosino:'',posologia:''},
+  {id:39,nome:'Leticia Mendel',dn:'',idade:'',sexo:'F',tel:'',email:'',mae:'',pai:'',plano:'Sulamérica',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Particular',acesso:'Plano de Saúde',ultConsulta:'',status:'Em uso',med:'Xolair (omalizumabe)',lab:'Novartis',dose:'300 mg',intervalo:'4 semanas',indicacao:'Urticária crônica espontânea',cid:'L50.1',igeEsp:'',igeTotal:'',eosino:'',posologia:''},
+  {id:40,nome:'Natalia de Souza Rodrigues',dn:'',idade:'28',sexo:'F',tel:'',email:'',mae:'',pai:'',plano:'Mediservice',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Particular',acesso:'Plano de Saúde',ultConsulta:excelDate(45968),status:'Em uso',med:'Dupixent (dupilumabe)',lab:'Sanofi / Regeneron',dose:'300 mg',intervalo:'2 semanas',indicacao:'Dermatite atópica moderada a grave',cid:'L20.9',igeEsp:'',igeTotal:'',eosino:'',posologia:''},
+  {id:41,nome:'Mayara Rampon',dn:'',idade:'16',sexo:'F',tel:'',email:'',mae:'',pai:'',plano:'Sem plano',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Particular',acesso:'SUS',ultConsulta:excelDate(46056),status:'Em uso',med:'Xolair (omalizumabe)',lab:'Novartis',dose:'300 mg',intervalo:'4 semanas',indicacao:'Urticária crônica espontânea',cid:'L50.1',igeEsp:'neg',igeTotal:'58',eosino:'243',posologia:''},
+  {id:42,nome:'Beatriz Gaspar Dominguez Pinto',dn:'',idade:'',sexo:'F',tel:'',email:'',mae:'',pai:'',plano:'Sem plano',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Particular',acesso:'SUS',ultConsulta:excelDate(46057),status:'Em uso',med:'Xolair (omalizumabe)',lab:'Novartis',dose:'300 mg',intervalo:'2 semanas',indicacao:'Urticária crônica espontânea',cid:'L50.1',igeEsp:'',igeTotal:'',eosino:'',posologia:''},
+  {id:43,nome:'Leandro Santánna Teixeira',dn:'',idade:'',sexo:'M',tel:'',email:'',mae:'',pai:'',plano:'Assim Saúde',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Convênio',acesso:'Oncomed',ultConsulta:excelDate(45862),status:'Em uso',med:'Dupixent (dupilumabe)',lab:'Sanofi / Regeneron',dose:'300 mg',intervalo:'2 semanas',indicacao:'Rinossinusite crônica com pólipos nasais',cid:'J32.9',igeEsp:'',igeTotal:'51',eosino:'195',feno:'N/A',posologia:''},
+  {id:44,nome:'João Pedro Rodrigues da Silva',dn:'',idade:'10 anos',sexo:'M',tel:'',email:'',mae:'',pai:'',plano:'Assim Saúde',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Convênio',acesso:'Assim Saúde',ultConsulta:excelDate(46051),status:'Em uso',med:'Dupixent (dupilumabe)',lab:'Sanofi / Regeneron',dose:'200 mg',intervalo:'2 semanas',indicacao:'Asma alérgica grave',cid:'J45.0',igeEsp:'DP/BL',igeTotal:'742',igeUlt:'341',eosino:'241',feno:'161',feno2:'N/A',posologia:''},
+  {id:45,nome:'Maria Luiza Roosevelt Monteiro',dn:'',idade:'9',sexo:'F',tel:'',email:'',mae:'',pai:'',plano:'Assim Saúde',uf:'RJ',cidade:'Rio de Janeiro',bairro:'',tipo:'Convênio',acesso:'Assim Saúde',ultConsulta:excelDate(46037),status:'Em uso',med:'Dupixent (dupilumabe)',lab:'Sanofi / Regeneron',dose:'200 mg',intervalo:'2 semanas',indicacao:'Asma alérgica grave',cid:'J45.0',igeEsp:'DP/BL',igeTotal:'650',eosino:'1048',posologia:''},
+];
+let _sheetsLoaded = true;
 const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyWGRlZOYvKHt8Nn_oIA702YRY-ApdZjkKFycpZI9FbxJZhvX3cHctuX8sJnZn2PRvm/exec';
 
 function loadFromSheets(){
-  showSheetsStatus('Carregando pacientes...');
+  // Patients are already loaded from local data
+  // Try to sync with Google Sheets in background (won't block if fails)
   var proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(SHEETS_URL);
   fetch(proxyUrl)
     .then(function(r){ return r.json(); })
     .then(function(data){
-      var rows = JSON.parse(data.contents);
-      applySheetData(rows);
+      try {
+        var rows = JSON.parse(data.contents);
+        if(rows && rows.length > 0){
+          // Merge: add any patients from Sheets not in local data
+          rows.forEach(function(row){
+            if(row.id && row.nome && !PATIENTS.find(function(p){ return String(p.id)===String(row.id); })){
+              PATIENTS.push(row);
+            }
+          });
+          filteredPts = [...PATIENTS];
+          renderTable(filteredPts);
+          buildCharts();
+          buildAlerts();
+          populateMedFilter();
+        }
+      } catch(e){ console.warn('Sheets sync parse error:', e); }
     })
-    .catch(function(err){
-      console.warn('Proxy failed, trying direct...', err.message);
-      // Try direct as last resort
-      fetch(SHEETS_URL + '?t=' + Date.now())
-        .then(function(r){ return r.json(); })
-        .then(function(rows){ applySheetData(rows); })
-        .catch(function(e){
-          hideSheetsStatus();
-          showToast('Erro ao carregar dados. Verifique sua conexao.');
-          console.error('All methods failed:', e);
-        });
+    .catch(function(){ 
+      console.warn('Sheets sync unavailable - using local data');
     });
 }
+
 
 function loadViaJsonp(){
   window._sheetsCallback = function(rows){
@@ -2573,6 +2626,7 @@ function _checkPin(){
       var ma=document.getElementById('main-app');
       if(ma) ma.style.display='flex';
       setTimeout(function(){
+        filteredPts=[...PATIENTS];renderTable(filteredPts);buildCharts();buildAlerts();populateMedFilter();
         loadFromSheets();
         document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
         var dp=document.getElementById('page-dashboard');
@@ -2628,7 +2682,17 @@ document.addEventListener('keydown',function(e){
       var lp=document.getElementById('login-page');
       if(lp)lp.style.display='none';
       var ma=document.getElementById('main-app');
-      if(ma){ ma.style.display='flex'; setTimeout(loadFromSheets, 200); }
+      if(ma){
+        ma.style.display='flex';
+        setTimeout(function(){
+          filteredPts=[...PATIENTS];
+          renderTable(filteredPts);
+          buildCharts();
+          buildAlerts();
+          populateMedFilter();
+          loadFromSheets();
+        }, 100);
+      }
     }
   }catch(e){}
 })();
