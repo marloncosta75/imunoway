@@ -1130,26 +1130,56 @@ const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyWGRlZOYvKHt8Nn_oIA
 
 function loadFromSheets(){
   showSheetsStatus('Carregando pacientes...');
-  fetch(SHEETS_URL)
+  var proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(SHEETS_URL);
+  fetch(proxyUrl)
     .then(function(r){ return r.json(); })
-    .then(function(rows){
-      PATIENTS.length = 0;
-      rows.forEach(function(row){ if(row.id) PATIENTS.push(row); });
-      filteredPts = [...PATIENTS];
-      _sheetsLoaded = true;
-      renderTable(filteredPts);
-      buildCharts();
-      buildAlerts();
-      populateMedFilter();
-      hideSheetsStatus();
+    .then(function(data){
+      var rows = JSON.parse(data.contents);
+      applySheetData(rows);
     })
     .catch(function(err){
-      console.error('Sheets error:', err);
-      hideSheetsStatus();
-      showToast('Nao foi possivel carregar. Verifique a conexao.');
+      console.warn('Proxy failed, trying direct...', err.message);
+      // Try direct as last resort
+      fetch(SHEETS_URL + '?t=' + Date.now())
+        .then(function(r){ return r.json(); })
+        .then(function(rows){ applySheetData(rows); })
+        .catch(function(e){
+          hideSheetsStatus();
+          showToast('Erro ao carregar dados. Verifique sua conexao.');
+          console.error('All methods failed:', e);
+        });
     });
 }
 
+function loadViaJsonp(){
+  window._sheetsCallback = function(rows){
+    applySheetData(rows);
+    var s = document.getElementById('jsonp-script');
+    if(s) s.parentNode.removeChild(s);
+  };
+  var script = document.createElement('script');
+  script.id = 'jsonp-script';
+  script.src = SHEETS_URL + '?callback=_sheetsCallback&t=' + Date.now();
+  script.onerror = function(){
+    hideSheetsStatus();
+    showToast('Erro ao conectar com Google Sheets.');
+  };
+  document.head.appendChild(script);
+}
+
+function applySheetData(rows){
+  PATIENTS.length = 0;
+  rows.forEach(function(row){
+    if(row.id) PATIENTS.push(row);
+  });
+  filteredPts = [...PATIENTS];
+  _sheetsLoaded = true;
+  renderTable(filteredPts);
+  buildCharts();
+  buildAlerts();
+  populateMedFilter();
+  hideSheetsStatus();
+}
 function showSheetsStatus(msg){
   var el = document.getElementById('sheets-status');
   if(!el){
@@ -1663,8 +1693,13 @@ function savePaciente(){
   filteredPts = [...PATIENTS];
 
   // Save to Google Sheets
-  fetch(SHEETS_URL, {method:'POST', body:JSON.stringify({action:'add', data:newPt})})
-    .catch(function(e){ console.warn('Sheets save:', e); });
+  // Save to Sheets (no-cors = fire and forget, data will save even without response)
+  fetch(SHEETS_URL, {
+    method:'POST',
+    mode:'no-cors',
+    headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify({action:'add', data:newPt})
+  }).catch(function(e){ console.warn('Sheets save:', e); });
 
   // ── Clear all form fields ────────────────────────────────────
   clearFormFields();
@@ -2423,8 +2458,13 @@ function executeDelete(){
     renderTable(filteredPts);
     buildCharts();
     showToast('🗑️ Paciente "'+nome+'" excluído.');
-    fetch(SHEETS_URL, {method:'POST', body:JSON.stringify({action:'delete', id:delId})})
-      .catch(function(e){ console.warn('Sheets delete:', e); });
+    // Delete from Sheets
+    fetch(SHEETS_URL, {
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({action:'delete', id:delId})
+    }).catch(function(e){ console.warn('Sheets delete:', e); });
   }
   closeDeleteModal();
 }
