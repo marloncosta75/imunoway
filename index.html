@@ -2845,48 +2845,20 @@ function saveNewUser(){
 }
 
 
-// Send data to Sheets - multiple fallback methods
-function sheetsRequest(payload){
-  var url = SHEETS_URL + '?payload=' + encodeURIComponent(JSON.stringify(payload));
+// Send data to Sheets - robust multi-method approach
+function sheetsRequest(obj){
+  // Encode as 'dados' param (avoid Google's reserved 'payload' word)
+  var url = SHEETS_URL + '?dados=' + encodeURIComponent(JSON.stringify(obj));
   
-  // Method 1: fetch no-cors GET (Apps Script executes even if response blocked)
-  try {
-    fetch(url, {mode:'no-cors'}).catch(function(){});
-  } catch(e){}
+  // Method 1: fetch no-cors GET — Apps Script executes on first request, before redirect
+  fetch(url, {mode:'no-cors', redirect:'follow'})
+    .catch(function(){});
   
-  // Method 2: Image beacon (always works, truly fire-and-forget)
-  try {
+  // Method 2: Image beacon — truly CORS-free, always fires
+  setTimeout(function(){
     var img = new Image();
-    img.src = url + '&_=' + Date.now();
-  } catch(e){}
-  
-  // Method 3: Hidden form POST (bypasses CORS entirely)
-  try {
-    var form = document.createElement('form');
-    form.method = 'POST';
-    form.action = SHEETS_URL;
-    form.target = '_blank_hidden_' + Date.now();
-    form.style.display = 'none';
-    var input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = 'payload';
-    input.value = JSON.stringify(payload);
-    form.appendChild(input);
-    
-    // Create hidden iframe as target
-    var iframe = document.createElement('iframe');
-    iframe.name = form.target;
-    iframe.style.display = 'none';
-    document.body.appendChild(iframe);
-    document.body.appendChild(form);
-    form.submit();
-    
-    // Cleanup after 5 seconds
-    setTimeout(function(){
-      if(form.parentNode) form.parentNode.removeChild(form);
-      if(iframe.parentNode) iframe.parentNode.removeChild(iframe);
-    }, 5000);
-  } catch(e){ console.warn('Form method failed:', e); }
+    img.src = url + '&t=' + Date.now();
+  }, 300);
 }
 
 // Expose critical functions on window so inline onclick always works
