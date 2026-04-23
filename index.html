@@ -2845,16 +2845,48 @@ function saveNewUser(){
 }
 
 
-// Send data to Sheets via GET request (avoids CORS POST issues)
+// Send data to Sheets - multiple fallback methods
 function sheetsRequest(payload){
   var url = SHEETS_URL + '?payload=' + encodeURIComponent(JSON.stringify(payload));
-  // Use fetch with no-cors GET - Apps Script processes it even without readable response
-  fetch(url, {mode:'no-cors'})
-    .catch(function(){
-      // Fallback: use Image tag GET (always works, no CORS)
-      var img = new Image();
-      img.src = url;
-    });
+  
+  // Method 1: fetch no-cors GET (Apps Script executes even if response blocked)
+  try {
+    fetch(url, {mode:'no-cors'}).catch(function(){});
+  } catch(e){}
+  
+  // Method 2: Image beacon (always works, truly fire-and-forget)
+  try {
+    var img = new Image();
+    img.src = url + '&_=' + Date.now();
+  } catch(e){}
+  
+  // Method 3: Hidden form POST (bypasses CORS entirely)
+  try {
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = SHEETS_URL;
+    form.target = '_blank_hidden_' + Date.now();
+    form.style.display = 'none';
+    var input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'payload';
+    input.value = JSON.stringify(payload);
+    form.appendChild(input);
+    
+    // Create hidden iframe as target
+    var iframe = document.createElement('iframe');
+    iframe.name = form.target;
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+    document.body.appendChild(form);
+    form.submit();
+    
+    // Cleanup after 5 seconds
+    setTimeout(function(){
+      if(form.parentNode) form.parentNode.removeChild(form);
+      if(iframe.parentNode) iframe.parentNode.removeChild(iframe);
+    }, 5000);
+  } catch(e){ console.warn('Form method failed:', e); }
 }
 
 // Expose critical functions on window so inline onclick always works
