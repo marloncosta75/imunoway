@@ -2414,13 +2414,13 @@ function _parsePtXLSX(buf, fname){
     });
   }
   
-  _fillPatientForm(data[0], data.length, fname);
+  if(data.length>1){ _bulkImport(data,fname); } else { _fillPatientForm(data[0],1,fname); }
 }
 
 function _parsePtJSON(raw, fname){
   let data=JSON.parse(raw); if(!Array.isArray(data)) data=[data];
   if(!data.length){ showSingleOverlay(false); showSingleNotice('❌ JSON vazio.'); return; }
-  _fillPatientForm(data[0], data.length, fname);
+  if(data.length>1){ _bulkImport(data,fname); } else { _fillPatientForm(data[0],1,fname); }
 }
 
 function _fillPatientForm(row, total, fname){
@@ -3017,6 +3017,161 @@ function _parsePtText(text, fname){
     return;
   }
   _fillPatientForm(row, 1, fname);
+}
+
+
+function _buildPatientFromRow(row, baseId){
+  var mapping = detectCols(Object.keys(row));
+  var g2 = function(key){ var col=mapping[key]; return col ? String(row[col]||'').trim() : ''; };
+  var nome = g2('nome'); if(!nome) return null;
+  var medVal='';
+  var medRaw = g2('med');
+  if(medRaw){
+    var medEl=document.getElementById('f-med');
+    if(medEl){
+      var mLow=medRaw.toLowerCase();
+      var match=Array.from(medEl.options).find(function(o){
+        return o.text.toLowerCase().includes(mLow)||mLow.includes(o.text.split('(')[0].trim().toLowerCase());
+      });
+      if(match) medVal=match.value||match.text;
+    }
+    if(!medVal) medVal=medRaw;
+  }
+  var doseRaw=g2('dose');
+  if(doseRaw && !doseRaw.toLowerCase().includes('mg') && /^\d/.test(doseRaw)) doseRaw=doseRaw+'mg';
+  var indRaw='';
+  var indCol=mapping['indicacao'];
+  if(indCol) indRaw=String(row[indCol]||'').trim();
+  if(!indRaw && row['__indicacao_col__']) indRaw=String(row['__indicacao_col__']||'').trim();
+  var indNorm = indRaw ? normalizeIndication(indRaw) : '';
+  return {
+    id: baseId+Math.floor(Math.random()*100),
+    nome:nome, dn:g2('dn')||'', idade:g2('idade')||'', sexo:g2('sexo')||'',
+    tel:g2('tel')||'', email:g2('email')||'', mae:g2('mae')||'',
+    plano:g2('plano')||'', uf:g2('uf')||'', cidade:g2('cidade')||'',
+    bairro:g2('bairro')||'', tipo:g2('tipo')||'', acesso:g2('acesso')||'',
+    ultConsulta:g2('ultConsulta')||'', status:g2('status')||'Em analise',
+    localApl:g2('localApl')||'', med:medVal, lab:'', dose:doseRaw||'',
+    intervalo:g2('intervalo')||'', posologia:g2('posologia')||'',
+    indicacao:indNorm, cid:g2('cid')||'', igeTotal:g2('igeTotal')||'',
+    eosino:g2('eosino')||'', feno:g2('feno')||'',
+    percPaciente:'', avalMedico:'', avalData:'', obsPaciente:'', obsMedico:''
+  };
+}
+
+function _bulkImport(data, fname){
+  showSingleOverlay(false);
+  var imported=[], errors=[], baseId=PATIENTS.length+1000;
+  var sampleFields=[];
+  data.forEach(function(row, idx){
+    try{
+      var pt = _buildPatientFromRow(row, baseId+idx);
+      if(pt){
+        imported.push(pt);
+        if(idx===0) sampleFields=Object.keys(pt).filter(function(k){ return pt[k]&&pt[k]!==''; });
+      } else { errors.push(idx+1); }
+    }catch(e){ errors.push(idx+1); }
+  });
+  if(!imported.length){
+    showSingleNotice('Nenhum paciente valido encontrado. Verifique se a planilha tem coluna Nome.');
+    return;
+  }
+  imported.forEach(function(pt){
+    PATIENTS.push(pt);
+    sheetsRequest({action:'add', data:pt});
+  });
+  filteredPts=[...PATIENTS];
+  renderTable(filteredPts);
+  buildCharts();
+  buildAlerts();
+  _showImportModal(imported, errors, fname, sampleFields);
+}
+
+function _showImportModal(imported, errors, fname, sampleFields){
+  var old=document.getElementById('bim');
+  if(old) old.parentNode.removeChild(old);
+  var modal=document.createElement('div');
+  modal.id='bim';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;font-family:Inter,sans-serif';
+  var box=document.createElement('div');
+  box.style.cssText='background:#fff;border-radius:16px;padding:24px;max-width:420px;width:90%;max-height:90vh;overflow-y:auto';
+  function close(){ var m=document.getElementById('bim'); if(m) m.parentNode.removeChild(m); }
+  modal.onclick=function(e){ if(e.target===modal) close(); };
+  // Header
+  var hdr=document.createElement('div');
+  hdr.style.cssText='display:flex;align-items:center;gap:10px;margin-bottom:16px';
+  var ico=document.createElement('div');
+  ico.style.cssText='width:36px;height:36px;background:#E1F5EE;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0';
+  ico.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F6E56" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  var tit=document.createElement('div');
+  tit.innerHTML='<div style="font-size:15px;font-weight:700;color:#111">Importacao concluida</div><div style="font-size:11px;color:#888;margin-top:1px">'+fname+'</div>';
+  var xb=document.createElement('button');
+  xb.innerHTML='&times;';
+  xb.style.cssText='margin-left:auto;background:#f5f5f5;border:none;width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:16px';
+  xb.onclick=close;
+  hdr.appendChild(ico); hdr.appendChild(tit); hdr.appendChild(xb);
+  box.appendChild(hdr);
+  // Stats
+  var keyFields=['nome','med','dose','intervalo','indicacao','plano','status'];
+  var nFields=sampleFields.filter(function(f){ return keyFields.includes(f); }).length;
+  var grid=document.createElement('div');
+  grid.style.cssText='display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px';
+  [{n:imported.length,l:'importados',bg:'#E1F5EE',c:'#0F6E56',s:'#085041'},
+   {n:nFields,l:'campos/paciente',bg:'#f5f5f5',c:'#333',s:'#888'},
+   {n:errors.length,l:'com erro',bg:errors.length?'#FCEBEB':'#f5f5f5',c:errors.length?'#A32D2D':'#888',s:errors.length?'#A32D2D':'#888'}
+  ].forEach(function(d){
+    var c=document.createElement('div');
+    c.style.cssText='background:'+d.bg+';border-radius:10px;padding:10px;text-align:center';
+    c.innerHTML='<div style="font-size:22px;font-weight:700;color:'+d.c+'">'+d.n+'</div><div style="font-size:10px;color:'+d.s+';margin-top:2px">'+d.l+'</div>';
+    grid.appendChild(c);
+  });
+  box.appendChild(grid);
+  // Fields recognized
+  var fl=sampleFields.filter(function(f){ return keyFields.includes(f); }).join(', ')||'nome';
+  var fi=document.createElement('div');
+  fi.style.cssText='background:#f9f9f9;border-radius:8px;padding:8px 12px;font-size:11px;color:#555;margin-bottom:8px';
+  fi.textContent='Campos reconhecidos: '+fl;
+  box.appendChild(fi);
+  // Errors
+  if(errors.length){
+    var ed=document.createElement('div');
+    ed.style.cssText='background:#FCEBEB;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:11px;color:#A32D2D';
+    ed.textContent=errors.length+' linha(s) sem nome ignoradas (linhas: '+errors.slice(0,5).join(', ')+(errors.length>5?'...':'')+')';
+    box.appendChild(ed);
+  }
+  // Preview
+  if(imported.length>0){
+    var pd=document.createElement('div');
+    pd.style.cssText='margin-top:10px;border-top:0.5px solid #e5e5e5;padding-top:10px';
+    var pt2=document.createElement('div');
+    pt2.style.cssText='font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px';
+    pt2.textContent='Previa dos primeiros pacientes';
+    pd.appendChild(pt2);
+    imported.slice(0,3).forEach(function(pt){
+      var r=document.createElement('div');
+      r.style.cssText='font-size:11.5px;padding:4px 0;border-bottom:0.5px solid #f0f0f0;display:flex;justify-content:space-between';
+      var n=document.createElement('span'); n.style.fontWeight='500'; n.textContent=pt.nome;
+      var m=document.createElement('span'); m.style.color='#666'; m.textContent=pt.med||'';
+      r.appendChild(n); r.appendChild(m);
+      pd.appendChild(r);
+    });
+    box.appendChild(pd);
+  }
+  // Buttons
+  var btns=document.createElement('div');
+  btns.style.cssText='display:flex;gap:8px;margin-top:14px';
+  var vb=document.createElement('button');
+  vb.textContent='Ver pacientes importados';
+  vb.style.cssText='flex:1;padding:10px;border-radius:8px;border:none;background:#0F6E56;color:#fff;cursor:pointer;font-size:12.5px;font-weight:700;font-family:Inter,sans-serif';
+  vb.onclick=function(){ close(); var n=document.getElementById('nav-pacientes'); showPage('pacientes',n); };
+  var cb=document.createElement('button');
+  cb.textContent='Fechar';
+  cb.style.cssText='flex:1;padding:10px;border-radius:8px;border:0.5px solid #ddd;background:#fff;cursor:pointer;font-size:12.5px;font-weight:600;font-family:Inter,sans-serif';
+  cb.onclick=close;
+  btns.appendChild(vb); btns.appendChild(cb);
+  box.appendChild(btns);
+  modal.appendChild(box);
+  document.body.appendChild(modal);
 }
 
 // Expose critical functions on window so inline onclick always works
