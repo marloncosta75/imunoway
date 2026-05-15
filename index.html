@@ -537,7 +537,7 @@ select option{background:var(--surface)}
           <!-- UPLOAD BANNER -->
           <div class="upload-banner" id="ub-main" onclick="document.getElementById('inp-single-pt').click()">
             <input type="file" id="inp-single-pt" style="display:none"
-              accept=".xlsx,.xls,.csv,.json,.txt,.ods"
+              accept=".xlsx,.xls,.csv,.json,.txt,.ods,.pdf,.doc,.docx"
               onchange="readPatientFile(this);this.value=''">
             <div class="ub-icon">⬆️</div>
             <div class="ub-text">
@@ -2276,29 +2276,58 @@ function closeModal(){
 
 // ── PATIENT FILE IMPORT ───────────────────────────────────────
 const FIELD_MAP = {
-  nome:       ['nome','name','paciente','titular'],
-  dn:         ['data nascimento','data nasc','dt nasc','nascimento','birth date'],
-  sexo:       ['sexo','genero','gênero','gender'],
-  tel:        ['telefone','celular','fone','whatsapp','phone','contato'],
-  email:      ['email','e-mail','mail'],
-  mae:        ['mae','mãe','responsavel','responsável'],
-  plano:      ['plano de saude','plano saude','plano','operadora','convenio','convênio'],
-  uf:         ['uf','estado','sigla'],
+  nome:       ['nome','name','paciente','titular','patient','nome completo','nome paciente'],
+  dn:         ['data nascimento','data nasc','dt nasc','nascimento','birth date','data de nascimento','dt_nasc','nascimento'],
+  sexo:       ['sexo','genero','gênero','gender','sex'],
+  tel:        ['telefone','celular','fone','whatsapp','phone','contato','tel','telefone/cel'],
+  email:      ['email','e-mail','mail','correio'],
+  mae:        ['mae','mãe','responsavel','responsável','nome mãe','nome mae'],
+  plano:      ['plano de saude','plano saude','plano','operadora','convenio','convênio','plano de saúde','seguro saude','seguro saúde'],
+  uf:         ['uf','estado','sigla','estado/uf'],
   cidade:     ['cidade','city','municipio','município'],
-  bairro:     ['bairro'],
-  status:     ['status','situacao','situação'],
-  med:        ['medicamento','biologico','biológico','farmaco','drug','remedio','remédio'],
-  lab:        ['laboratorio','laboratório','fabricante'],
-  dose:       ['dose','dosagem','posologia'],
-  intervalo:  ['intervalo de aplicacao','intervalo aplicacao','intervalo','frequencia'],
-  acesso:     ['tipo de acesso','tipo acesso','acesso'],
-  indicacao:  ['indicacao clinica','indicação clínica','indicacao','indicação','diagnostico','diagnóstico','doenca'],
-  cid:        ['cid-10','cid10','cid','codigo cid'],
-  ultConsulta:['ultima consulta','última consulta','data consulta','dt consulta'],
-  igeTotal:   ['ige total','ige_total','total ige'],
-  eosino:     ['eosinofilos','eosinófilos','eosinofilo'],
-  feno:       ['feno','no exalado','feno ppb'],
+  bairro:     ['bairro','bairro/região','região'],
+  status:     ['status','situacao','situação','situação atual'],
+  med:        ['medicamento','medicação','medicacao','biologico','biológico','biológico','farmaco','fármaco','drug','remedio','remédio','imunobiológico','imunobiologico','tratamento','medicação/biológico','bio'],
+  lab:        ['laboratorio','laboratório','fabricante','lab','laboratório/fabricante'],
+  dose:       ['dose','dosagem','posologia','dose (mg)','dose mg'],
+  intervalo:  ['intervalo de aplicacao','intervalo aplicacao','intervalo','frequencia','frequência','periodicidade','intervalo (semanas)'],
+  acesso:     ['tipo de acesso','tipo acesso','acesso','via de acesso'],
+  indicacao:  ['indicacao clinica','indicação clínica','indicacao','indicação','diagnostico','diagnóstico','doenca','doença','diagnose','cid indicacao','indicação/diagnóstico','patologia'],
+  cid:        ['cid-10','cid10','cid','codigo cid','código cid','cid_10'],
+  ultConsulta:['ultima consulta','última consulta','data consulta','dt consulta','data ultimo atendimento','último atendimento','data ult consulta'],
+  igeTotal:   ['ige total','ige_total','total ige','ige','ige sérico','ige serico'],
+  eosino:     ['eosinofilos','eosinófilos','eosinofilo','eosinófilo','eos','eosinófilos/mm3'],
+  feno:       ['feno','no exalado','feno ppb','fração exalada','feno (ppb)'],
 };
+
+// Abbreviation map for indication field
+var INDICATION_MAP = {
+  'da':        'Dermatite Atópica',
+  'da grave':  'Dermatite Atópica Grave',
+  'asma':      'Asma Grave',
+  'uce':       'Urticária Crônica Espontânea',
+  'uc':        'Urticária Crônica',
+  'pso':       'Psoríase em Placas',
+  'psoríase':  'Psoríase em Placas',
+  'psoríase placas': 'Psoríase em Placas',
+  'polipose':  'Polipose Nasal',
+  'polipose nasal': 'Polipose Nasal',
+  'rin':       'Rinite Alérgica',
+  'rinite':    'Rinite Alérgica',
+  'aa':        'Alopecia Areata',
+  'pn':        'Prurigo Nodular',
+  'prurigo':   'Prurigo Nodular',
+  'csur':      'Urticária Crônica Espontânea',
+};
+
+function normalizeIndication(raw){
+  if(!raw) return '';
+  var parts = raw.toLowerCase().split(/[+,;&\/\n]+/).map(function(p){ return p.trim(); });
+  var mapped = parts.map(function(p){
+    return INDICATION_MAP[p] || (p.charAt(0).toUpperCase() + p.slice(1));
+  });
+  return mapped.join(' + ');
+}
 
 function detectCols(headers){
   const map={}, used=new Set();
@@ -2331,9 +2360,17 @@ function readPatientFile(inp){
       const r=new FileReader();
       r.onload=e=>{ try{ _parsePtJSON(e.target.result, file.name); }catch(err){ showSingleOverlay(false); showSingleNotice('❌ JSON inválido: '+err.message); } };
       r.readAsText(file,'UTF-8');
+    } else if(ext==='pdf'){
+      const r=new FileReader();
+      r.onload=e=>{ try{ _parsePtPDF(e.target.result, file.name); }catch(err){ showSingleOverlay(false); showSingleNotice('❌ Erro PDF: '+err.message); } };
+      r.readAsText(file,'UTF-8');
+    } else if(ext==='doc'||ext==='docx'){
+      const r=new FileReader();
+      r.onload=e=>{ try{ _parsePtWord(e.target.result, file.name); }catch(err){ showSingleOverlay(false); showSingleNotice('❌ Erro Word: '+err.message); } };
+      r.readAsText(file,'UTF-8');
     } else {
       showSingleOverlay(false);
-      showSingleNotice('❌ Use XLSX, XLS, CSV, JSON, ODS ou TXT.');
+      showSingleNotice('❌ Use XLSX, XLS, CSV, PDF, DOC, DOCX, JSON ou TXT.');
     }
   }, 100);
 }
@@ -2351,8 +2388,32 @@ function _parsePtCSV(raw, fname){
 function _parsePtXLSX(buf, fname){
   const wb=XLSX.read(buf,{type:'array',cellDates:true,raw:false});
   const ws=wb.Sheets[wb.SheetNames[0]];
+  // Get raw array to detect headerless columns
+  const raw_arr=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
   const data=XLSX.utils.sheet_to_json(ws,{defval:'',raw:false});
   if(!data.length){ showSingleOverlay(false); showSingleNotice('❌ Planilha vazia.'); return; }
+  
+  // Detect headerless columns by value patterns
+  // Check if any header is empty/null - try to infer from values
+  if(raw_arr.length > 1){
+    var headers = raw_arr[0];
+    var sampleRow = raw_arr[1] || [];
+    headers.forEach(function(hdr, colIdx){
+      if(!hdr || String(hdr).trim() === ''){
+        // Try to infer column type from sample values
+        var colVals = raw_arr.slice(1,4).map(function(r){ return String(r[colIdx]||'').trim().toLowerCase(); });
+        var allVals = colVals.join(' ');
+        // Indication abbreviations
+        if(/(da|asma|uce|polipose|rinite|psoríase|psoríase|prurigo)/.test(allVals)){
+          // Set a synthetic header
+          for(var i=0;i<data.length;i++){
+            data[i]['__indicacao_col__'] = String(raw_arr[i+1]?.[colIdx]||'').trim();
+          }
+        }
+      }
+    });
+  }
+  
   _fillPatientForm(data[0], data.length, fname);
 }
 
@@ -2390,7 +2451,13 @@ function _fillPatientForm(row, total, fname){
   setF('f-bairro','bairro');
   setF('f-cidade','cidade');
   setF('f-status','status');
-  setF('f-dose','dose');
+  // Dose - handle numeric values
+  const _doseCol = mapping['dose'];
+  if(_doseCol){
+    var _doseRaw = String(row[_doseCol]||'').trim();
+    if(_doseRaw && !_doseRaw.toLowerCase().includes('mg')) _doseRaw = _doseRaw + 'mg';
+    if(_doseRaw){ const el=document.getElementById('f-dose'); if(el){el.value=_doseRaw;el.closest?.('.form-group')?.classList.add('field-autofilled');filled.push('f-dose');} }
+  }
 
   // Date fields
   ['dn','ultConsulta'].forEach(key=>{
@@ -2412,9 +2479,20 @@ function _fillPatientForm(row, total, fname){
   const medCol=mapping['med'];
   if(medCol){ const raw=String(row[medCol]||'').trim().toLowerCase(); const medEl=document.getElementById('f-med'); if(medEl&&raw){ const match=Array.from(medEl.options).find(o=>o.text.toLowerCase().includes(raw)||raw.includes(o.text.split('(')[0].trim().toLowerCase())); if(match){medEl.value=match.value||match.text;if(typeof autoFillLab==='function')autoFillLab(medEl);medEl.closest?.('.form-group')?.classList.add('field-autofilled');filled.push('f-med');}}}
 
-  // Indicação
+  // Indicação - headerless column support + abbreviation normalization
+  var _indRaw='';
   const indCol=mapping['indicacao'];
-  if(indCol){ const raw=String(row[indCol]||'').trim().toLowerCase(); const indEl=document.getElementById('f-ind'); if(indEl&&raw){ const match=Array.from(indEl.options).find(o=>o.text.toLowerCase().includes(raw.slice(0,12))||raw.includes(o.text.toLowerCase().slice(0,12))); if(match){indEl.value=match.value||match.text;if(typeof autoCid==='function')autoCid(indEl,'f-cid');indEl.closest?.('.form-group')?.classList.add('field-autofilled');filled.push('f-ind');}}}
+  if(indCol) _indRaw=String(row[indCol]||'').trim();
+  if(!_indRaw&&row['__indicacao_col__']) _indRaw=String(row['__indicacao_col__']||'').trim();
+  if(_indRaw){
+    var _indNorm=normalizeIndication(_indRaw);
+    const indEl=document.getElementById('f-ind');
+    if(indEl&&_indNorm){
+      var _is=_indNorm.split(' + ')[0].toLowerCase();
+      const match=Array.from(indEl.options).find(o=>o.text.toLowerCase().includes(_is.slice(0,10))||_is.includes(o.text.toLowerCase().slice(0,10)));
+      if(match){indEl.value=match.value||match.text;if(typeof autoCid==='function')autoCid(indEl,'f-cid');indEl.closest?.('.form-group')?.classList.add('field-autofilled');filled.push('f-ind');}
+    }
+  }
 
   // CID
   const cidCol=mapping['cid'];
@@ -2874,6 +2952,71 @@ function sheetsRequest(obj){
     var img = new Image();
     img.src = url + '&t=' + Date.now();
   }, 300);
+}
+
+
+// ── PDF Parser - reads text and uses smart pattern matching ──────────────────
+function _parsePtPDF(content, fname){
+  // PDF text extraction - basic text parsing
+  var text = content.replace(/[^\x20-\x7E\u00C0-\u024F\n\r\t]/g,'');
+  _parsePtText(text, fname);
+}
+
+function _parsePtWord(content, fname){
+  // Word doc - extract visible text
+  var text = content.replace(/<[^>]+>/g,' ').replace(/&[a-z]+;/g,' ').replace(/\s+/g,' ');
+  _parsePtText(text, fname);
+}
+
+function _parsePtText(text, fname){
+  // Smart text parsing - look for patterns
+  var row = {};
+  
+  // Name patterns: "Nome: João Silva" or "Paciente: João Silva"
+  var nameMatch = text.match(/(?:nome|paciente|patient)[:.]?\s*([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ][^\n\r,;:]{5,60})/i);
+  if(nameMatch) row['nome'] = nameMatch[1].trim();
+  
+  // Phone patterns
+  var telMatch = text.match(/(?:tel|fone|celular|whatsapp)[:.]?\s*([\(\d][\d\s\(\)\-\.]{7,20})/i);
+  if(!telMatch) telMatch = text.match(/\(\d{2}\)\s*\d{4,5}[\-\s]?\d{4}/);
+  if(telMatch) row['telefone'] = telMatch[1]||telMatch[0];
+  
+  // Email
+  var emailMatch = text.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
+  if(emailMatch) row['email'] = emailMatch[0];
+  
+  // Plan
+  var planoMatch = text.match(/(?:plano|convênio|convenio|operadora)[:.]?\s*([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ][^\n\r,;:]{3,40})/i);
+  if(planoMatch) row['plano de saude'] = planoMatch[1].trim();
+  
+  // Medication
+  var medMatch = text.match(/(?:medicamento|medicação|medicacao|biológico|biologico|tratamento)[:.]?\s*([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ][^\n\r,;:]{3,50})/i);
+  if(!medMatch) medMatch = text.match(/(?:Dupilumabe|Omalizumabe|Benralizumabe|Mepolizumabe|Tezepelumabe|Reslizumabe|Secukinumabe|Ixekizumabe|Guselkumabe|Risankizumabe|Bimekizumabe)/i);
+  if(medMatch) row['medicação'] = medMatch[1]||medMatch[0];
+  
+  // Dose
+  var doseMatch = text.match(/(?:dose|dosagem)[:.]?\s*(\d+\s*mg)/i);
+  if(!doseMatch) doseMatch = text.match(/(\d+)\s*mg/i);
+  if(doseMatch) row['dose'] = doseMatch[1]||doseMatch[0];
+  
+  // Indication
+  var indMatch = text.match(/(?:indicação|indicacao|diagnóstico|diagnostico|doença|doenca)[:.]?\s*([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ][^\n\r,;:]{5,80})/i);
+  if(indMatch) row['indicação'] = indMatch[1].trim();
+  
+  // CID
+  var cidMatch = text.match(/CID[-\s]?10?[:.]?\s*([A-Z]\d{2}\.?\d?)/i);
+  if(cidMatch) row['cid'] = cidMatch[1];
+  
+  // Date of birth
+  var dnMatch = text.match(/(?:nascimento|nasc|data.*nasc)[:.]?\s*(\d{2}[/\-\.]\d{2}[/\-\.]\d{4})/i);
+  if(dnMatch) row['data nascimento'] = dnMatch[1];
+  
+  if(Object.keys(row).length === 0){
+    showSingleOverlay(false);
+    showSingleNotice('⚠️ Não foi possível extrair dados de "'+fname+'". Tente XLSX ou CSV com colunas nomeadas.');
+    return;
+  }
+  _fillPatientForm(row, 1, fname);
 }
 
 // Expose critical functions on window so inline onclick always works
