@@ -3059,20 +3059,35 @@ function _buildPatientFromRow(row, baseId){
   };
 }
 
+function _normName(n){
+  return String(n||'').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/\s+/g,' ').trim();
+}
+
+function _isDuplicate(nome){
+  var n=_normName(nome);
+  return PATIENTS.some(function(p){ return _normName(p.nome)===n; });
+}
+
 function _bulkImport(data, fname){
   showSingleOverlay(false);
-  var imported=[], errors=[], baseId=PATIENTS.length+1000;
+  var imported=[], duplicates=[], errors=[], baseId=PATIENTS.length+1000;
   var sampleFields=[];
   data.forEach(function(row, idx){
     try{
       var pt = _buildPatientFromRow(row, baseId+idx);
       if(pt){
-        imported.push(pt);
-        if(idx===0) sampleFields=Object.keys(pt).filter(function(k){ return pt[k]&&pt[k]!==''; });
+        if(_isDuplicate(pt.nome)){
+          duplicates.push(pt.nome);
+        } else {
+          imported.push(pt);
+          if(imported.length===1) sampleFields=Object.keys(pt).filter(function(k){ return pt[k]&&pt[k]!==''; });
+        }
       } else { errors.push(idx+1); }
     }catch(e){ errors.push(idx+1); }
   });
-  if(!imported.length){
+  if(!imported.length && !duplicates.length){
     showSingleNotice('Nenhum paciente valido encontrado. Verifique se a planilha tem coluna Nome.');
     return;
   }
@@ -3084,10 +3099,10 @@ function _bulkImport(data, fname){
   renderTable(filteredPts);
   buildCharts();
   buildAlerts();
-  _showImportModal(imported, errors, fname, sampleFields);
+  _showImportModal(imported, duplicates, errors, fname, sampleFields);
 }
 
-function _showImportModal(imported, errors, fname, sampleFields){
+function _showImportModal(imported, duplicates, errors, fname, sampleFields){
   var old=document.getElementById('bim');
   if(old) old.parentNode.removeChild(old);
   var modal=document.createElement('div');
@@ -3115,9 +3130,10 @@ function _showImportModal(imported, errors, fname, sampleFields){
   var keyFields=['nome','med','dose','intervalo','indicacao','plano','status'];
   var nFields=sampleFields.filter(function(f){ return keyFields.includes(f); }).length;
   var grid=document.createElement('div');
-  grid.style.cssText='display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px';
+  grid.style.cssText='display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:12px';
   [{n:imported.length,l:'importados',bg:'#E1F5EE',c:'#0F6E56',s:'#085041'},
    {n:nFields,l:'campos/paciente',bg:'#f5f5f5',c:'#333',s:'#888'},
+   {n:duplicates.length,l:'duplicados',bg:duplicates.length?'#FFF3E0':'#f5f5f5',c:duplicates.length?'#E65100':'#888',s:duplicates.length?'#E65100':'#888'},
    {n:errors.length,l:'com erro',bg:errors.length?'#FCEBEB':'#f5f5f5',c:errors.length?'#A32D2D':'#888',s:errors.length?'#A32D2D':'#888'}
   ].forEach(function(d){
     var c=document.createElement('div');
@@ -3132,6 +3148,28 @@ function _showImportModal(imported, errors, fname, sampleFields){
   fi.style.cssText='background:#f9f9f9;border-radius:8px;padding:8px 12px;font-size:11px;color:#555;margin-bottom:8px';
   fi.textContent='Campos reconhecidos: '+fl;
   box.appendChild(fi);
+  // Duplicates
+  if(duplicates.length){
+    var dd=document.createElement('div');
+    dd.style.cssText='background:#FFF3E0;border:0.5px solid #FFB74D;border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:11px;color:#E65100';
+    var ddTitle=document.createElement('div');
+    ddTitle.style.cssText='font-weight:700;margin-bottom:5px';
+    ddTitle.textContent=duplicates.length+' paciente(s) ja existem no sistema — nao importados:';
+    dd.appendChild(ddTitle);
+    duplicates.slice(0,5).forEach(function(nome){
+      var li=document.createElement('div');
+      li.style.cssText='padding:2px 0;border-bottom:0.5px solid rgba(230,81,0,.15)';
+      li.textContent='• '+nome;
+      dd.appendChild(li);
+    });
+    if(duplicates.length>5){
+      var more=document.createElement('div');
+      more.style.cssText='padding-top:4px;font-style:italic;opacity:.7';
+      more.textContent='... e mais '+(duplicates.length-5)+' outros';
+      dd.appendChild(more);
+    }
+    box.appendChild(dd);
+  }
   // Errors
   if(errors.length){
     var ed=document.createElement('div');
