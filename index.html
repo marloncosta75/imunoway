@@ -1351,7 +1351,10 @@ function showDetail(id){
           <div style="font-size:12.5px;color:var(--muted);margin-top:2px">${p.sexo||'—'} · ${p.idade||'—'} · ${p.cidade||'—'}/${p.uf||'—'} · ${p.tel||'—'}</div>
           <div style="font-size:12px;color:var(--muted)">${p.email||''}</div>
         </div>
-        <div style="margin-left:auto">${statusBadge(p.status)}</div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+          ${statusBadge(p.status)}
+          <button onclick="window.openEditModal(${p.id})" style="padding:6px 14px;border-radius:8px;background:var(--brand-light);color:var(--brand);border:1px solid var(--border2);cursor:pointer;font-size:12px;font-weight:700;font-family:Inter,sans-serif">&#x270F;&#xFE0F; Editar</button>
+        </div>
       </div>
       <div class="detail-grid">
         <div class="detail-field"><label>Medicamento</label><span>${p.med||'—'}</span></div>
@@ -1378,6 +1381,21 @@ function showDetail(id){
         <div class="detail-field"><label>FENO (ppb)</label><span style="font-family:'DM Mono',monospace">${p.feno||'—'}</span></div>
       </div>
     </div>`;
+  // Add edit button to detail page header
+  setTimeout(function(){
+    var topbar = document.getElementById('topbar-actions');
+    if(topbar){
+      // Remove old edit btn if exists
+      var oldBtn = document.getElementById('detail-edit-btn');
+      if(oldBtn) oldBtn.parentNode.removeChild(oldBtn);
+      var editBtn = document.createElement('button');
+      editBtn.id = 'detail-edit-btn';
+      editBtn.textContent = '✏️ Editar paciente';
+      editBtn.style.cssText = 'padding:7px 16px;border-radius:8px;background:var(--brand-light);color:var(--brand);border:1px solid var(--border2);cursor:pointer;font-size:12px;font-weight:700;font-family:Inter,sans-serif';
+      editBtn.onclick = function(){ window.openEditModal(id); };
+      topbar.insertBefore(editBtn, topbar.firstChild);
+    }
+  }, 50);
   showPage('detalhe',null);
 }
 
@@ -1474,17 +1492,17 @@ function buildCharts(){
 function buildAlerts(){
   const semCid=PATIENTS.filter(p=>!p.cid||!p.med);
   document.getElementById('alert-sem-cid').innerHTML=semCid.length?
-    semCid.map(p=>`<div class="alert-item alert-danger">⚑ <div><b>${p.nome}</b> — ${!p.med?'Medicamento não vinculado':!p.cid?'CID primário ausente':''} <a href="#" onclick="showDetail(${p.id});return false" style="color:var(--brand);font-weight:700">Ver →</a></div></div>`).join(''):
+    semCid.map(p=>`<div class="alert-item alert-danger">⚑ <div><b>${p.nome}</b> — ${!p.med?'Medicamento não vinculado':!p.cid?'CID primário ausente':''} <a href="#" onclick="showDetail(${p.id});return false" style="color:var(--brand);font-weight:700">Ver →</a> <a href="#" onclick="window.openEditModal(${p.id});return false" style="color:var(--brand);font-weight:700;margin-left:8px">✏️ Editar</a></div></div>`).join(''):
     '<div style="color:var(--muted);font-size:12.5px">Nenhuma pendência crítica.</div>';
 
   const semRet=PATIENTS.filter(p=>daysSince(p.ultConsulta)>90).sort((a,b)=>daysSince(b.ultConsulta)-daysSince(a.ultConsulta));
   document.getElementById('alert-sem-retorno').innerHTML=semRet.length?
-    semRet.map(p=>`<div class="alert-item alert-warn">⚠ <div><b>${p.nome}</b> — Última consulta: ${fmtDate(p.ultConsulta)} (${semRetornoText(p.ultConsulta)} atrás) <a href="#" onclick="showDetail(${p.id});return false" style="color:var(--brand);font-weight:700">Ver →</a></div></div>`).join(''):
+    semRet.map(p=>`<div class="alert-item alert-warn">⚠ <div><b>${p.nome}</b> — Última consulta: ${fmtDate(p.ultConsulta)} (${semRetornoText(p.ultConsulta)} atrás) <a href="#" onclick="showDetail(${p.id});return false" style="color:var(--brand);font-weight:700">Ver →</a> <a href="#" onclick="window.openEditModal(${p.id});return false" style="color:var(--brand);font-weight:700;margin-left:8px">✏️ Editar</a></div></div>`).join(''):
     '<div style="color:var(--muted);font-size:12.5px">Nenhuma pendência.</div>';
 
   const stRev=PATIENTS.filter(p=>['Em análise','Aguardando liberação','Laudo a ser entregue'].includes(p.status));
   document.getElementById('alert-status').innerHTML=stRev.length?
-    stRev.map(p=>`<div class="alert-item alert-info">ℹ <div><b>${p.nome}</b> — ${p.status} <a href="#" onclick="showDetail(${p.id});return false" style="color:var(--brand);font-weight:700">Ver →</a></div></div>`).join(''):
+    stRev.map(p=>`<div class="alert-item alert-info">ℹ <div><b>${p.nome}</b> — ${p.status} <a href="#" onclick="showDetail(${p.id});return false" style="color:var(--brand);font-weight:700">Ver →</a> <a href="#" onclick="window.openEditModal(${p.id});return false" style="color:var(--brand);font-weight:700;margin-left:8px">✏️ Editar</a></div></div>`).join(''):
     '<div style="color:var(--muted);font-size:12.5px">Nenhuma pendência.</div>';
 }
 
@@ -1756,13 +1774,20 @@ function savePaciente(){
     feno:        g('f-feno'),
   };
 
-  // ── Add to PATIENTS array ────────────────────────────────────
-  PATIENTS.push(newPt);
+  // ── Add or Update PATIENTS array ─────────────────────────────
+  if(window._editingPatientId){
+    newPt.id = window._editingPatientId;
+    const _eidx = PATIENTS.findIndex(x=>x.id===window._editingPatientId);
+    if(_eidx > -1){ PATIENTS[_eidx] = newPt; }
+    sheetsRequest({action:'update', id:window._editingPatientId, data:newPt});
+    window._editingPatientId = null;
+    const saveBtn2=document.querySelector('[onclick="savePaciente()"]');
+    if(saveBtn2) saveBtn2.textContent='+ Salvar Paciente';
+  } else {
+    PATIENTS.push(newPt);
+    sheetsRequest({action:'add', data:newPt});
+  }
   filteredPts = [...PATIENTS];
-
-  // Save to Google Sheets
-  // Save to Sheets via GET (bypasses CORS)
-  sheetsRequest({action:'add', data:newPt});
 
   // ── Clear all form fields ────────────────────────────────────
   clearFormFields();
@@ -2119,21 +2144,74 @@ function renderScores(){
 }
 
 // ── EDIT PATIENT ──────────────────────────────────────────────
+window._editingPatientId = null; // tracks which patient is being edited
+
 function openEditModal(id){
   const p=PATIENTS.find(x=>x.id===id); if(!p) return;
+  window._editingPatientId = id;
   showPage('novo', document.getElementById('nav-novo'));
   setTimeout(()=>{
-    ['f-nome','f-tel','f-email','f-plano','f-status'].forEach(fid=>{
-      const map={nome:p.nome,tel:p.tel||'',email:p.email||'',plano:p.plano||'',status:p.status||''};
-      const key=fid.replace('f-','');
+    // Fill ALL fields
+    const fields = {
+      'f-nome':p.nome||'', 'f-dn':p.dn||'', 'f-idade':p.idade||'',
+      'f-sexo':p.sexo||'', 'f-tel':p.tel||'', 'f-email':p.email||'',
+      'f-mae':p.mae||'', 'f-plano':p.plano||'', 'f-uf':p.uf||'',
+      'f-tipo':p.tipo||'', 'f-acesso':p.acesso||'',
+      'f-ult-consulta':p.ultConsulta||'', 'f-status':p.status||'',
+      'f-local-apl':p.localApl||'', 'f-dose':p.dose||'',
+      'f-intervalo':p.intervalo||'', 'f-posologia':p.posologia||'',
+      'f-consultor':p.consultor||'', 'f-cid':p.cid||'',
+      'f-cotreat':p.cotreat||'', 'f-ind2':p.indicacao2||'',
+      'f-aval-data':p.avalData||'', 'f-obs-paciente':p.obsPaciente||'',
+      'f-obs-medico':p.obsMedico||''
+    };
+    Object.entries(fields).forEach(([fid, val])=>{
       const el=document.getElementById(fid);
-      if(el && map[key]){ el.value=map[key]; el.closest('.form-group')?.classList.add('field-autofilled'); }
+      if(el && val){ el.value=val; el.closest('.form-group')?.classList.add('field-autofilled'); }
     });
+    // Medication
     if(p.med){
       const medEl=document.getElementById('f-med');
-      if(medEl){ medEl.value=p.med; autoFillLab(medEl); }
+      if(medEl){ medEl.value=p.med; if(typeof autoFillLab==='function') autoFillLab(medEl); }
     }
-    showSingleNotice('✅ Dados de '+p.nome+' carregados para edição. Faça as alterações e salve.');
+    // Indication
+    if(p.indicacao){
+      const indEl=document.getElementById('f-ind');
+      if(indEl){
+        const match=Array.from(indEl.options).find(o=>o.text===p.indicacao||o.value===p.indicacao);
+        if(match) indEl.value=match.value||match.text;
+      }
+      if(typeof autoCid==='function') autoCid(document.getElementById('f-ind'),'f-cid');
+    }
+    // City cascade
+    if(p.uf && typeof loadCidades==='function'){
+      loadCidades(p.uf);
+      setTimeout(()=>{
+        const cidEl=document.getElementById('f-cidade');
+        if(cidEl) cidEl.value=p.cidade||'';
+        if(p.cidade && typeof loadBairros==='function') loadBairros(p.cidade);
+        setTimeout(()=>{
+          const bairroEl=document.getElementById('f-bairro');
+          if(bairroEl) bairroEl.value=p.bairro||'';
+        },100);
+      },100);
+    }
+    // Perception cards
+    if(p.percPaciente){
+      document.querySelectorAll('[data-field="f-perc-paciente"]').forEach(c=>{
+        if(c.dataset.value===p.percPaciente){ selectRespCard(c); }
+      });
+    }
+    if(p.avalMedico){
+      document.querySelectorAll('[data-field="f-aval-medico"]').forEach(c=>{
+        if(c.dataset.value===p.avalMedico){ selectRespCard(c); }
+      });
+    }
+    // Change save button label
+    const saveBtn=document.querySelector('[onclick="savePaciente()"]');
+    if(saveBtn) saveBtn.textContent='💾 Salvar alterações';
+    // Show notice
+    showSingleNotice('✅ Editando: '+p.nome+'. Faça as alterações e clique em Salvar.');
     switchTab(0, document.querySelectorAll('.form-tab')[0]);
   }, 120);
 }
