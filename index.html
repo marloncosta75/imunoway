@@ -2815,7 +2815,6 @@ function _checkPin(){
       var ma=document.getElementById('main-app');
       if(ma) ma.style.display='flex';
       setTimeout(function(){
-        filteredPts=[...PATIENTS];renderTable(filteredPts);buildCharts();buildAlerts();populateMedFilter();
         loadFromSheets();
         document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
         var dp=document.getElementById('page-dashboard');
@@ -2874,11 +2873,6 @@ document.addEventListener('keydown',function(e){
       if(ma){
         ma.style.display='flex';
         setTimeout(function(){
-          filteredPts=[...PATIENTS];
-          renderTable(filteredPts);
-          buildCharts();
-          buildAlerts();
-          populateMedFilter();
           loadFromSheets();
         }, 100);
       }
