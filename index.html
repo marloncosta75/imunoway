@@ -414,10 +414,39 @@ select option{background:var(--surface)}
         <div class="topbar-actions">
           <button class="btn btn-secondary" style="font-size:12px" onclick="toggleMoreMenu()">⋯ Exportar</button>
           <button class="btn btn-primary" onclick="showPage('novo',document.getElementById('nav-novo'))">+ Novo Paciente</button>
-          <div class="tnav-dropdown" id="more-menu" style="top:48px;right:0">
-            <div class="tnav-dd-item" onclick="exportData('xlsx')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D6F42" stroke-width="2" style="flex-shrink:0"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/><path d="m7 14 2 2 4-4"/></svg> Exportar Excel</div>
-            <div class="tnav-dd-item" onclick="exportData('pdf')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C0392B" stroke-width="2" style="flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/><polyline points="9 9 10 9 11 9"/></svg> Exportar PDF</div>
-            <div class="tnav-dd-item" onclick="exportData('word')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#185ABD" stroke-width="2" style="flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/><path d="M9 9h1l1 4 1-4h1"/></svg> Exportar Word</div>
+          <div class="tnav-dropdown" id="more-menu" style="top:48px;right:0;min-width:260px">
+            <!-- Exportar dados gerais -->
+            <div style="padding:6px 10px 4px;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px">Exportar dados</div>
+            <div class="tnav-dd-item" onclick="exportData('xlsx')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D6F42" stroke-width="2" style="flex-shrink:0"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/><path d="m7 14 2 2 4-4"/></svg> Excel</div>
+            <div class="tnav-dd-item" onclick="exportData('pdf')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C0392B" stroke-width="2" style="flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/></svg> PDF</div>
+            <div class="tnav-dd-item" onclick="exportData('word')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#185ABD" stroke-width="2" style="flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Word</div>
+            <div style="height:1px;background:var(--border);margin:4px 6px"></div>
+            <!-- Exportar para plataformas -->
+            <div style="padding:6px 10px 4px;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px">Exportar para plataformas</div>
+            <div class="tnav-dd-item" onclick="exportToPlataform('iclinic')" style="gap:8px">
+              <div style="width:20px;height:20px;border-radius:5px;background:#0066CC;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:8px;font-weight:800;color:#fff;letter-spacing:-.3px">iC</div>
+              <span>iClinic</span>
+            </div>
+            <div class="tnav-dd-item" onclick="exportToPlataform('hidoctor')" style="gap:8px">
+              <div style="width:20px;height:20px;border-radius:5px;background:#E63946;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:8px;font-weight:800;color:#fff;letter-spacing:-.3px">HD</div>
+              <span>HiDoctor</span>
+            </div>
+            <div class="tnav-dd-item" onclick="exportToPlataform('doctoralia')" style="gap:8px">
+              <div style="width:20px;height:20px;border-radius:5px;background:#00B4D8;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:8px;font-weight:800;color:#fff;letter-spacing:-.3px">Dr</div>
+              <span>Doctoralia</span>
+            </div>
+            <div class="tnav-dd-item" onclick="exportToPlataform('amplimed')" style="gap:8px">
+              <div style="width:20px;height:20px;border-radius:5px;background:#7B2D8B;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:8px;font-weight:800;color:#fff;letter-spacing:-.3px">Am</div>
+              <span>Amplimed</span>
+            </div>
+            <div class="tnav-dd-item" onclick="exportToPlataform('prodoctor')" style="gap:8px">
+              <div style="width:20px;height:20px;border-radius:5px;background:#00695C;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:8px;font-weight:800;color:#fff;letter-spacing:-.3px">PD</div>
+              <span>ProDoctor</span>
+            </div>
+            <div class="tnav-dd-item" onclick="exportToPlataform('feegow')" style="gap:8px">
+              <div style="width:20px;height:20px;border-radius:5px;background:#FF6B35;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:8px;font-weight:800;color:#fff;letter-spacing:-.3px">Fg</div>
+              <span>Feegow</span>
+            </div>
             <div style="height:1px;background:var(--border);margin:4px 6px"></div>
             <div class="tnav-dd-item" onclick="downloadTemplate()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Baixar modelo CSV</div>
           </div>
@@ -3310,6 +3339,182 @@ function _showImportModal(imported, duplicates, errors, fname, sampleFields){
   box.appendChild(btns);
   modal.appendChild(box);
   document.body.appendChild(modal);
+}
+
+
+// ── PLATFORM EXPORT FUNCTIONS ────────────────────────────────────────────────
+
+function exportToPlataform(platform){
+  closeMoreMenu();
+  if(!PATIENTS||!PATIENTS.length){ showToast('Nenhum dado para exportar.'); return; }
+
+  var rows, filename, fields, labels;
+
+  // iClinic field mapping (based on official docs: docs.iclinic.com.br)
+  if(platform === 'iclinic'){
+    fields = ['name','birth_date','gender','mobile_phone','email','zip_code',
+              'city','state','neighborhood','observation'];
+    labels = ['name','birth_date','gender','mobile_phone','email','zip_code',
+              'city','state','neighborhood','observation'];
+    rows = PATIENTS.map(function(p){
+      return {
+        name:         p.nome || '',
+        birth_date:   _fmtDateISO(p.dn),
+        gender:       (p.sexo||'').toLowerCase().charAt(0) || '',
+        mobile_phone: p.tel || '',
+        email:        p.email || '',
+        zip_code:     '',
+        city:         p.cidade || '',
+        state:        p.uf || '',
+        neighborhood: p.bairro || '',
+        observation:  [
+          p.med ? 'Med: '+p.med : '',
+          p.dose ? 'Dose: '+p.dose : '',
+          p.indicacao ? 'Indicacao: '+p.indicacao : '',
+          p.plano ? 'Plano: '+p.plano : ''
+        ].filter(Boolean).join(' | ')
+      };
+    });
+    filename = 'pacientes_iclinic.csv';
+  }
+
+  // HiDoctor field mapping
+  else if(platform === 'hidoctor'){
+    fields = ['Nome','Data Nasc.','Sexo','Celular','E-mail','Cidade','UF','Plano',
+              'Medicamento','Indicação','CID','Status','Última Consulta'];
+    rows = PATIENTS.map(function(p){
+      return {
+        'Nome':           p.nome||'',
+        'Data Nasc.':     p.dn||'',
+        'Sexo':           p.sexo||'',
+        'Celular':        p.tel||'',
+        'E-mail':         p.email||'',
+        'Cidade':         p.cidade||'',
+        'UF':             p.uf||'',
+        'Plano':          p.plano||'',
+        'Medicamento':    p.med||'',
+        'Indicação':      p.indicacao||'',
+        'CID':            p.cid||'',
+        'Status':         p.status||'',
+        'Última Consulta':p.ultConsulta||''
+      };
+    });
+    filename = 'pacientes_hidoctor.csv';
+  }
+
+  // Doctoralia field mapping
+  else if(platform === 'doctoralia'){
+    rows = PATIENTS.map(function(p){
+      return {
+        'first_name': (p.nome||'').split(' ')[0],
+        'last_name':  (p.nome||'').split(' ').slice(1).join(' '),
+        'birth_date': p.dn||'',
+        'gender':     p.sexo||'',
+        'phone':      p.tel||'',
+        'email':      p.email||'',
+        'city':       p.cidade||'',
+        'notes':      (p.med||'') + (p.indicacao ? ' / '+p.indicacao : '')
+      };
+    });
+    filename = 'pacientes_doctoralia.csv';
+  }
+
+  // Amplimed field mapping
+  else if(platform === 'amplimed'){
+    rows = PATIENTS.map(function(p){
+      return {
+        'nome':           p.nome||'',
+        'data_nascimento':p.dn||'',
+        'sexo':           p.sexo||'',
+        'telefone':       p.tel||'',
+        'email':          p.email||'',
+        'cidade':         p.cidade||'',
+        'estado':         p.uf||'',
+        'convenio':       p.plano||'',
+        'observacoes':    [p.med, p.dose, p.indicacao, p.cid].filter(Boolean).join(' | ')
+      };
+    });
+    filename = 'pacientes_amplimed.csv';
+  }
+
+  // ProDoctor field mapping
+  else if(platform === 'prodoctor'){
+    rows = PATIENTS.map(function(p){
+      return {
+        'nome':           p.nome||'',
+        'data_nascimento':p.dn||'',
+        'sexo':           p.sexo||'',
+        'celular':        p.tel||'',
+        'email':          p.email||'',
+        'cidade':         p.cidade||'',
+        'uf':             p.uf||'',
+        'bairro':         p.bairro||'',
+        'plano':          p.plano||'',
+        'medicamento':    p.med||'',
+        'dose':           p.dose||'',
+        'indicacao':      p.indicacao||'',
+        'cid':            p.cid||'',
+        'status':         p.status||''
+      };
+    });
+    filename = 'pacientes_prodoctor.csv';
+  }
+
+  // Feegow field mapping  
+  else if(platform === 'feegow'){
+    rows = PATIENTS.map(function(p){
+      return {
+        'nome':       p.nome||'',
+        'nascimento': p.dn||'',
+        'sexo':       p.sexo||'',
+        'celular':    p.tel||'',
+        'email':      p.email||'',
+        'cidade':     p.cidade||'',
+        'estado':     p.uf||'',
+        'convenio':   p.plano||'',
+        'obs':        [p.med, p.indicacao].filter(Boolean).join(' / ')
+      };
+    });
+    filename = 'pacientes_feegow.csv';
+  }
+
+  // Generic CSV
+  else {
+    rows = PATIENTS.map(function(p){
+      return {
+        'Nome':p.nome||'','Data Nasc.':p.dn||'','Sexo':p.sexo||'',
+        'Telefone':p.tel||'','Email':p.email||'','Plano':p.plano||'',
+        'Cidade':p.cidade||'','UF':p.uf||'','Medicamento':p.med||'',
+        'Dose':p.dose||'','Indicacao':p.indicacao||'','CID':p.cid||'',
+        'Status':p.status||''
+      };
+    });
+    filename = 'pacientes_imunoway.csv';
+  }
+
+  // Build CSV
+  if(rows && rows.length){
+    var cols = Object.keys(rows[0]);
+    var csv  = '\uFEFF' + cols.join(';') + '\n';
+    rows.forEach(function(r){
+      csv += cols.map(function(c){
+        var v = String(r[c]||'').replace(/"/g,'""');
+        return v.includes(';')||v.includes('"')||v.includes('\n') ? '"'+v+'"' : v;
+      }).join(';') + '\n';
+    });
+    _download(csv, filename, 'text/csv;charset=utf-8');
+    showToast('\u2705 ' + rows.length + ' pacientes exportados para ' + platform + '!');
+  }
+}
+
+function _fmtDateISO(d){
+  if(!d) return '';
+  // Convert DD/MM/YYYY to YYYY-MM-DD
+  var parts = String(d).split(/[\/\-\.]/);
+  if(parts.length === 3 && parts[0].length === 2){
+    return parts[2]+'-'+parts[1]+'-'+parts[0];
+  }
+  return d;
 }
 
 // Expose critical functions on window so inline onclick always works
