@@ -1255,7 +1255,7 @@ const PATIENTS = [
 let _sheetsLoaded = true;
 const SHEETS_URL = ''; // disabled - using Supabase
 const SUPA_URL = 'https://nekqsuvjzwzprcsozwnr.supabase.co';
-const SUPA_KEY = 'sb_publishable_cItO3Ib9OUn1SibZYsykgA_4RiXOLB8';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5la3FzdXZqend6cHJjc296d25yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNDc0ODYsImV4cCI6MjA5NDYyMzQ4Nn0.uhTTUnDXqguR6uN1ZeE5T2yGA1EwB1i7rEe9MUfkszY';
 
 function loadFromSheets(){
   showSheetsStatus('Carregando pacientes...');
@@ -1821,7 +1821,7 @@ function showPage(name,navEl){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   if(navEl)navEl.classList.add('active');
   const titles={dashboard:'Dashboard',pacientes:'Pacientes',novo:'Novo Paciente',detalhe:'Detalhe do Paciente',alertas:'Alertas e Pendências',usuarios:'Gerenciar Usuários'};
-  document.getElementById('page-title').textContent=titles[name]||name;
+  var _ptEl=document.getElementById('page-title-text');if(_ptEl)_ptEl.textContent=titles[name]||name;
   if(name==='pacientes'){if(PATIENTS.length===0&&_sheetsLoaded===false){loadFromSheets();}else{renderTable(filteredPts.length?filteredPts:PATIENTS);populateMedFilter();}}
   if(name==='dashboard'){buildCharts();}
   if(name==='dashboard'){buildCharts();}
