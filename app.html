@@ -2922,7 +2922,7 @@ function _setDotsColor(c){
 }
 
 function _setMsg(m){
-  var el=document.getElementById('pin-msg');
+  var el=document.getElementById('pmsg');
   if(el)el.textContent=m;
 }
 
@@ -2935,11 +2935,17 @@ document.addEventListener('keydown',function(e){
   else if(e.key==='Escape')pkClear();
 });
 
-// PIN is always required on first load of this session
-// (localStorage.iw_unlocked is set per session via sessionStorage now)
+// Skip PIN screen if user already authenticated via index.html login
 (function(){
   try{
-    if(sessionStorage.getItem('iw_ok_v3')==='1'){
+    // Check new Supabase session (from index.html login)
+    var sess = JSON.parse(localStorage.getItem('iw_session'));
+    var validSession = sess && sess.medico_id && sess.expires > Date.now();
+
+    // Also check legacy session storage unlock
+    var legacyOk = sessionStorage.getItem('iw_ok_v3') === '1';
+
+    if(validSession || legacyOk){
       var lp=document.getElementById('login-page');
       if(lp)lp.style.display='none';
       var ma=document.getElementById('main-app');
