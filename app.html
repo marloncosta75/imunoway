@@ -17,11 +17,22 @@ if(!_session || _session.expires < Date.now()){
   window.location.href = 'index.html';
 }
 // Apply doctor colors before page renders (prevents flash)
-var _r = document.documentElement.style;
 if(_session){
   if(_session.cor_brand) document.documentElement.style.setProperty('--brand', _session.cor_brand);
   if(_session.cor_navy)  document.documentElement.style.setProperty('--navy',  _session.cor_navy);
 }
+// Hide PIN screen immediately if valid session — prevents pk errors
+document.addEventListener('DOMContentLoaded', function(){
+  try{
+    var sess = JSON.parse(localStorage.getItem('iw_session'));
+    if(sess && sess.medico_id && sess.expires > Date.now()){
+      var lp = document.getElementById('login-page');
+      if(lp) lp.style.display = 'none';
+      var ma = document.getElementById('main-app');
+      if(ma){ ma.style.display = 'flex'; }
+    }
+  }catch(e){}
+});
 </script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700;800&display=swap');
