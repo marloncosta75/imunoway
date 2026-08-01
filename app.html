@@ -1,1 +1,1628 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ImunoWay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
+<script>
+var _session;
+try { _session = JSON.parse(localStorage.getItem('iw_session')); } catch(e){}
+if(!_session || _session.expires < Date.now()){
+  window.location.href = 'index.html';
+}
+if(_session){
+  if(_session.cor_brand) document.documentElement.style.setProperty('--brand', _session.cor_brand);
+  if(_session.cor_navy)  document.documentElement.style.setProperty('--navy',  _session.cor_navy);
+}
+document.addEventListener('DOMContentLoaded', function(){
+  try{
+    var sess = JSON.parse(localStorage.getItem('iw_session'));
+    if(sess && sess.medico_id && sess.expires > Date.now()){
+      var lp = document.getElementById('login-page');
+      if(lp) lp.style.display = 'none';
+      var ma = document.getElementById('main-app');
+      if(ma){ ma.style.display = 'flex'; }
+      setTimeout(function(){ if(typeof loadFromSheets==='function') loadFromSheets(); }, 200);
+    }
+  }catch(e){}
+});
+</script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700;800&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --brand:#C4522A;--brand-dark:#8B3A2A;--brand-light:#FBF0EA;
+  --accent:#E8967A;--accent2:#F5C4AD;--sage:#5C8C7A;--sage-light:#E8F3EF;
+  --bg:#FBF6F3;--bg2:#F7ECE5;--surface:#FFF;--surface2:#FDF8F5;--surface3:#F7EDE6;
+  --navy:#2C1810;--navy2:#3D2218;
+  --border:#EDD5C8;--border2:#DFC0AF;
+  --text:#2C1810;--muted:#7A5C40;--small:#B89070;
+  --danger:#C0392B;--danger-bg:#FDF0EE;--danger-border:#F5C4B8;
+  --warn:#D4956A;--warn-bg:#FDF3EB;--warn-border:#F5D5B8;
+  --success:#5C8C7A;--success-bg:#E8F3EF;--success-border:#B8D8D0;
+  --info:#5B7FA6;--info-bg:#EDF3FA;--info-border:#C0D4E8;
+}
+body{background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;font-family:'Inter',sans-serif}
+.app{display:flex;min-height:100vh}
+.sidebar{width:248px;background:var(--navy);display:flex;flex-direction:column;flex-shrink:0}
+.sidebar-logo{padding:22px 20px 16px;border-bottom:1px solid rgba(255,255,255,.07)}
+.sidebar-logo .wordmark{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:400;color:#fff;letter-spacing:-.3px;line-height:1;font-style:italic}
+.sidebar-logo .dot{color:var(--accent)}
+.sidebar-logo .sub{font-size:8px;font-weight:600;color:rgba(255,255,255,.3);letter-spacing:2.5px;text-transform:uppercase;margin-top:4px}
+.doctor-strip{margin:12px 14px;padding:12px 14px;background:rgba(196,82,42,.12);border:1px solid rgba(232,150,122,.2);border-radius:12px}
+#doc-photo-wrap:hover{border-color:rgba(232,150,122,.7) !important}
+.doctor-strip .ds-label{font-size:8px;font-weight:700;color:var(--accent);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px}
+.doctor-strip .ds-name{font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:500;color:#fff;font-style:italic}
+.doctor-strip .ds-spec{font-size:9.5px;color:rgba(255,255,255,.4);margin-top:2px}
+.nav-group{padding:6px 0}
+.nav-label{padding:10px 20px 4px;font-size:8.5px;font-weight:700;color:rgba(255,255,255,.2);text-transform:uppercase;letter-spacing:2px}
+.nav-item{display:flex;align-items:center;gap:11px;padding:9px 14px 9px 18px;color:rgba(255,255,255,.45);cursor:pointer;transition:all .15s;font-size:12.5px;font-weight:500;border-radius:9px;margin:1px 8px;border-left:2px solid transparent}
+.nav-item:hover{background:rgba(196,82,42,.1);color:rgba(255,255,255,.85)}
+.nav-item.active{background:linear-gradient(90deg,rgba(196,82,42,.2),rgba(196,82,42,.06));color:#fff;border-left-color:var(--accent)}
+.ni-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;background:rgba(255,255,255,.05);flex-shrink:0}
+.nav-item.active .ni-icon{background:rgba(196,82,42,.25);color:var(--accent)}
+.nav-badge{margin-left:auto;background:rgba(212,149,106,.2);color:var(--accent);font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:5px}
+.sidebar-footer{padding:12px 16px;border-top:1px solid rgba(255,255,255,.07);margin-top:auto}
+.user-pill{display:flex;align-items:center;gap:10px}
+.avatar{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--brand),var(--accent));display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;flex-shrink:0}
+.user-name{color:rgba(255,255,255,.8);font-size:12px;font-weight:600}
+.user-role{color:rgba(255,255,255,.3);font-size:10px}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{background:var(--surface);border-bottom:1.5px solid var(--border);flex-shrink:0;display:flex;flex-direction:column}
+.topbar-top{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:56px;border-bottom:1px solid var(--border)}
+.page-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:400;color:var(--text);display:flex;align-items:center;gap:9px;font-style:italic}
+.topbar-actions{display:flex;align-items:center;gap:8px}
+.topbar-nav{display:flex;align-items:stretch;padding:0 8px;background:var(--surface);overflow-x:auto;gap:0}
+.tnav-item{display:inline-flex;align-items:center;gap:6px;padding:0 16px;height:40px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2.5px solid transparent;transition:all .15s;white-space:nowrap;flex-shrink:0}
+.tnav-item:hover{color:var(--brand)}
+.tnav-item.active{color:var(--brand);border-bottom-color:var(--brand)}
+.tnav-more{margin-left:auto;position:relative}
+.tnav-dropdown{position:absolute;top:calc(100% + 4px);right:0;background:var(--surface);border:1.5px solid var(--border2);border-radius:12px;box-shadow:0 8px 30px rgba(196,82,42,.1);min-width:190px;z-index:500;display:none;padding:5px}
+.tnav-dropdown.open{display:block}
+.tnav-dd-item{display:flex;align-items:center;gap:9px;padding:9px 13px;border-radius:8px;font-size:12.5px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .15s}
+.tnav-dd-item:hover{background:var(--brand-light);color:var(--brand)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer;border:none;transition:all .18s;font-family:'Inter',sans-serif;white-space:nowrap}
+.btn-primary{background:var(--brand);color:#fff;box-shadow:0 4px 14px rgba(196,82,42,.3)}
+.btn-primary:hover{background:var(--brand-dark);transform:translateY(-1px)}
+.btn-secondary{background:var(--surface);color:var(--text);border:1.5px solid var(--border2)}
+.btn-secondary:hover{background:var(--brand-light);border-color:var(--brand);color:var(--brand)}
+.btn-ghost{background:transparent;border:none;cursor:pointer;color:var(--muted);padding:4px 8px;font-size:14px}
+.btn-ghost:hover{color:var(--brand)}
+.btn-danger{background:var(--danger-bg);color:var(--danger);border:1.5px solid var(--danger-border)}
+.content{flex:1;overflow-y:auto;padding:24px 28px}
+.dash-hero{background:linear-gradient(120deg,var(--navy) 0%,#6B2A1C 55%,var(--brand-dark) 100%);border-radius:18px;padding:28px 32px;margin-bottom:22px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between}
+.dash-hero::before{content:'';position:absolute;right:-40px;top:-40px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(232,150,122,.15),transparent 65%);pointer-events:none}
+.dash-hero h2{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:400;color:#fff;font-style:italic;line-height:1.2;margin-bottom:6px}
+.dash-hero p{font-size:12.5px;color:rgba(255,255,255,.5);max-width:340px}
+.dash-hero-stats{display:flex;gap:14px;margin-top:16px}
+.dhs{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 18px;text-align:center;min-width:80px}
+.dhs-val{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:400;color:#fff;line-height:1}
+.dhs-lbl{font-size:9px;font-weight:600;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px;margin-top:3px}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.kpi-card{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:16px 18px;position:relative;overflow:hidden;transition:all .15s}
+.kpi-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(196,82,42,.1)}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0}
+.kpi-green::before{background:linear-gradient(90deg,var(--sage),transparent)}
+.kpi-warn::before{background:linear-gradient(90deg,var(--warn),transparent)}
+.kpi-coral::before{background:linear-gradient(90deg,var(--danger),transparent)}
+.kpi-mauve::before{background:linear-gradient(90deg,var(--brand),transparent)}
+.kpi-icon-wrap{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:10px}
+.kpi-green .kpi-icon-wrap{background:var(--success-bg)}
+.kpi-warn .kpi-icon-wrap{background:var(--warn-bg)}
+.kpi-coral .kpi-icon-wrap{background:var(--danger-bg)}
+.kpi-mauve .kpi-icon-wrap{background:var(--brand-light)}
+.kpi-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.kpi-value{font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:400;color:var(--text);line-height:1}
+.kpi-sub{font-size:11px;color:var(--small);margin-top:4px;font-weight:500}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.chart-card{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:18px 20px}
+.chart-title{font-size:11px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.bar-label{font-size:12px;color:var(--muted);width:145px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.bar-track{flex:1;height:7px;background:var(--bg2);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px}
+.bar-count{font-size:12px;font-weight:700;color:var(--text);width:26px;text-align:right;font-family:'DM Mono',monospace}
+.donut-wrap{display:flex;align-items:center;gap:16px}
+.donut-legend{display:flex;flex-direction:column;gap:7px;flex:1}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);font-weight:500}
+.legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.t-bars{display:flex;align-items:flex-end;gap:5px;height:70px;margin-top:10px}
+.t-bar{flex:1;border-radius:4px 4px 0 0;opacity:.8;cursor:pointer;transition:all .2s}
+.t-bar:hover{opacity:1;transform:scaleY(1.04);transform-origin:bottom}
+.t-labels{display:flex;gap:5px;margin-top:5px}
+.t-label{flex:1;font-size:9.5px;color:var(--small);text-align:center;font-weight:500}
+.table-card{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;overflow-x:auto;margin-bottom:20px}
+.table-header{padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1.5px solid var(--border);flex-wrap:wrap;gap:8px}
+.search-bar{display:flex;align-items:center;gap:8px;background:var(--bg2);border:1.5px solid var(--border);border-radius:9px;padding:7px 13px;width:270px;transition:all .15s}
+.search-bar:focus-within{border-color:var(--brand);box-shadow:0 0 0 3px rgba(196,82,42,.1)}
+.search-bar input{border:none;background:transparent;font-size:13px;color:var(--text);outline:none;width:100%;font-family:'Inter',sans-serif}
+.search-bar input::placeholder{color:var(--small)}
+table{width:100%;border-collapse:collapse}
+th{font-size:9.5px;color:var(--small);text-transform:uppercase;letter-spacing:.6px;font-weight:700;padding:8px 10px;text-align:left;border-bottom:1.5px solid var(--border);background:var(--bg2);white-space:nowrap}
+td{padding:8px 10px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border)}
+td:first-child{color:var(--text);font-weight:600}
+tr:last-child td{border-bottom:none}
+tr.clickable:hover td{background:var(--brand-light);cursor:pointer}
+tr.clickable:hover td:first-child{color:var(--brand)}
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:6px;font-size:10.5px;font-weight:700}
+.badge-green{background:var(--success-bg);color:var(--sage);border:1px solid var(--success-border)}
+.badge-blue{background:var(--info-bg);color:var(--info);border:1px solid var(--info-border)}
+.badge-orange{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn-border)}
+.badge-red{background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger-border)}
+.badge-gray{background:var(--bg2);color:var(--muted);border:1px solid var(--border)}
+.badge-mauve{background:var(--brand-light);color:var(--brand-dark);border:1px solid var(--border2)}
+.badge-gold{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn-border)}
+.form-wrap{background:var(--surface);border:1.5px solid var(--border);border-radius:16px;padding:24px 28px;max-width:980px}
+.form-tabs{display:flex;gap:2px;margin-bottom:24px;background:var(--bg2);border-radius:11px;padding:4px;overflow-x:auto}
+.form-tab{padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;color:var(--muted);border-radius:8px;transition:all .15s;white-space:nowrap}
+.form-tab.active{background:var(--surface);color:var(--brand);box-shadow:0 2px 8px rgba(196,82,42,.12)}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.form-section-title{font-size:10px;font-weight:700;color:var(--brand);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:12px;padding-bottom:7px;border-bottom:1.5px solid var(--brand-light)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px}
+.form-group{display:flex;flex-direction:column;gap:5px;position:relative}
+.form-group.full{grid-column:1/-1}
+label{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+input,select,textarea{border:1.5px solid var(--border);border-radius:9px;padding:8px 12px;font-size:13px;color:var(--text);background:var(--surface);outline:none;font-family:'Inter',sans-serif;font-weight:500;transition:all .15s;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(196,82,42,.1)}
+input::placeholder,textarea::placeholder{color:var(--small)}
+input[readonly]{background:var(--bg2);color:var(--muted);cursor:default}
+select option{background:var(--surface)}
+.detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.detail-field{background:var(--bg2);border:1.5px solid var(--border);border-radius:11px;padding:12px 14px}
+.detail-field label{font-size:9.5px;color:var(--small);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:3px;font-weight:700}
+.detail-field span{font-size:13px;font-weight:600;color:var(--text)}
+.section-card{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:18px 22px;margin-bottom:12px}
+.section-card-title{font-size:10px;font-weight:700;color:var(--brand);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:14px}
+.alert-item{display:flex;align-items:flex-start;gap:11px;padding:12px 15px;border-radius:11px;font-size:12.5px;margin-bottom:8px;font-weight:500}
+.alert-danger{background:var(--danger-bg);border:1.5px solid var(--danger-border);color:#922B21}
+.alert-warn{background:var(--warn-bg);border:1.5px solid var(--warn-border);color:#7D5A35}
+.alert-info{background:var(--info-bg);border:1.5px solid var(--info-border);color:#2C5282}
+.upload-zone{border:2px dashed var(--border2);border-radius:14px;padding:28px 20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface2)}
+.upload-zone:hover,.upload-zone.drag-over{border-color:var(--brand);background:var(--brand-light)}
+.upload-zone .uz-icon{font-size:34px;margin-bottom:10px;display:block}
+.upload-zone h3{font-size:14px;font-weight:700;color:var(--text);margin-bottom:5px}
+.upload-zone p{font-size:12px;color:var(--muted);font-weight:500}
+.file-list{margin-top:12px;display:flex;flex-direction:column;gap:7px}
+.file-item{display:flex;align-items:center;gap:11px;background:var(--surface);border:1.5px solid var(--border);border-radius:11px;padding:9px 13px}
+.file-item .fi-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.fi-pdf{background:#FDF0EE;color:#C0392B}
+.fi-xls{background:#E8F3EF;color:#3D6B58}
+.fi-img{background:#EDF3FA;color:#2C5282}
+.fi-doc{background:var(--brand-light);color:var(--brand)}
+.fi-other{background:var(--warn-bg);color:var(--warn)}
+.file-item .fi-name{flex:1;font-size:12.5px;font-weight:600;color:var(--text)}
+.file-item .fi-size{font-size:11px;color:var(--muted)}
+.file-item .fi-view{background:var(--brand-light);color:var(--brand);border:1px solid var(--border2);border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif}
+.file-item .fi-remove{background:var(--danger-bg);color:var(--danger);border:none;border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;font-weight:700}
+.parse-status{margin-top:10px;padding:11px 15px;border-radius:10px;font-size:12.5px;font-weight:600;display:none}
+.parse-ok{background:var(--success-bg);color:var(--sage);border:1.5px solid var(--success-border);display:flex!important;align-items:center;gap:8px}
+.parse-warn{background:var(--warn-bg);color:var(--warn);border:1.5px solid var(--warn-border);display:flex!important;align-items:center;gap:8px}
+
+/* SCORES — Opção B: linha única + pills */
+.score-entry{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.score-entry select{flex:1;min-width:160px}
+.score-entry input[type="number"]{width:90px;flex-shrink:0}
+.score-entry input[type="date"]{width:140px;flex-shrink:0}
+.score-entry button.score-add-btn{padding:8px 16px;border-radius:9px;background:var(--brand);color:#fff;border:none;cursor:pointer;font-size:13px;font-weight:700;flex-shrink:0;font-family:'Inter',sans-serif}
+.score-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.score-pill{display:inline-flex;align-items:center;gap:7px;background:var(--surface);border:1.5px solid var(--border);border-radius:20px;padding:5px 12px;font-size:12px}
+.score-pill .sp-name{font-weight:600;color:var(--text)}
+.score-pill .sp-val{font-weight:700;color:var(--brand);font-family:'DM Mono',monospace}
+.score-pill .sp-date{font-size:10.5px;color:var(--small)}
+.score-pill .sp-rm{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 2px;line-height:1}
+.score-pill .sp-rm:hover{color:var(--danger)}
+
+.upload-banner{display:flex;align-items:center;gap:14px;background:linear-gradient(135deg,var(--brand-light),#F7EAE2);border:2px dashed var(--border2);border-radius:13px;padding:16px 18px;margin-bottom:18px;cursor:pointer;transition:all .2s;position:relative}
+.upload-banner:hover{border-color:var(--brand);box-shadow:0 4px 16px rgba(196,82,42,.12)}
+.upload-banner .ub-icon{width:46px;height:46px;border-radius:12px;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;box-shadow:0 4px 12px rgba(196,82,42,.25)}
+.upload-banner .ub-text h4{font-size:14px;font-weight:700;color:var(--text);margin-bottom:3px}
+.upload-banner .ub-text p{font-size:12px;color:var(--muted);font-weight:500}
+.upload-banner .ub-btn{margin-left:auto;background:var(--brand);color:#fff;border:none;border-radius:9px;padding:10px 18px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;flex-shrink:0;box-shadow:0 3px 10px rgba(196,82,42,.2);transition:all .15s}
+.upload-banner .ub-btn:hover{background:var(--brand-dark)}
+.ub-file-badge{display:flex;align-items:center;gap:8px;background:var(--surface);border:1.5px solid var(--border2);border-radius:10px;padding:9px 14px;margin-top:8px}
+.ub-divider{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.ub-divider::before,.ub-divider::after{content:'';flex:1;height:1.5px;background:var(--border)}
+.ub-divider span{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;white-space:nowrap}
+.parse-overlay{position:absolute;inset:0;background:rgba(255,255,255,.9);border-radius:12px;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;z-index:10}
+.parse-overlay.show{display:flex}
+.parse-spinner{width:30px;height:30px;border:3px solid var(--border2);border-top-color:var(--brand);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.filled-notice{display:none;align-items:flex-start;gap:10px;border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:13px;font-weight:600}
+.filled-notice button{margin-left:auto;background:none;border:none;cursor:pointer;font-size:13px;font-weight:700;opacity:.7;flex-shrink:0}
+.field-autofilled input,.field-autofilled select{border-color:var(--sage)!important;background:#F0FAF7!important}
+.modal-overlay{position:fixed;inset:0;background:rgba(44,24,16,.5);z-index:9000;display:none;align-items:center;justify-content:center;pointer-events:all}
+.modal-overlay.open{display:flex !important;pointer-events:all}
+.modal-box{background:var(--surface);border-radius:18px;box-shadow:0 20px 60px rgba(196,82,42,.2);width:90%;max-width:820px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 22px;border-bottom:1.5px solid var(--border)}
+.modal-header h3{font-size:14px;font-weight:700;color:var(--text)}
+.modal-body{flex:1;overflow:auto;padding:20px 22px}
+.modal-close{background:var(--bg2);border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:17px;color:var(--muted);display:flex;align-items:center;justify-content:center}
+.login-wrap{min-height:100vh;display:flex;align-items:stretch;background:var(--navy)}
+.page{display:none}
+.page.active{display:block}
+.toast{position:fixed;bottom:22px;right:22px;background:var(--navy);color:#fff;padding:11px 18px;border-radius:10px;font-size:12.5px;font-weight:600;z-index:9999;display:none;align-items:center;gap:8px;box-shadow:0 8px 30px rgba(44,24,16,.3);border:1px solid rgba(232,150,122,.2)}
+.toast.show{display:flex}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+.resp-card{display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border-radius:10px;background:var(--surface);border:1.5px solid var(--border);cursor:pointer;transition:all .15s;user-select:none}
+.resp-card:hover{background:var(--brand-light);border-color:var(--border2)}
+.resp-card.selected{background:var(--brand-light);border-color:var(--brand);box-shadow:0 0 0 2px rgba(196,82,42,.12)}
+.resp-card.dimmed{opacity:.35;filter:grayscale(.4)}
+.resp-card.dimmed:hover{opacity:.6;filter:none}
+.resp-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.resp-label{font-size:12.5px;font-weight:600;color:var(--text);line-height:1.3}
+.resp-sub{font-size:10.5px;color:var(--muted);margin-top:2px;line-height:1.3}
+.pd{width:13px;height:13px;border-radius:50%;border:2px solid rgba(232,150,122,.4);background:transparent;transition:all .2s;display:inline-block;margin:0 5px}
+.pd.on{background:#E8967A;border-color:#E8967A;transform:scale(1.15)}
+.pk{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.13);color:#fff;border-radius:12px;padding:15px;font-size:22px;font-family:"Cormorant Garamond",serif;cursor:pointer;transition:background .12s;line-height:1;user-select:none}
+.pk:active{background:rgba(196,82,42,.5)!important}
+.pk-sm{font-family:Inter,sans-serif!important;font-size:11px!important;color:rgba(255,255,255,.5)!important}
+@keyframes sw{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}50%{transform:translateX(8px)}80%{transform:translateX(-5px)}}
+.sw{animation:sw .4s ease}
+
+/* Banner de boas-vindas / troca de senha */
+#banner-troca-senha{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#2C1810;color:#fff;padding:14px 20px;border-radius:14px;font-size:12.5px;font-weight:600;z-index:8500;display:flex;align-items:center;gap:12px;box-shadow:0 8px 30px rgba(44,24,16,.35);border:1px solid rgba(232,150,122,.25);max-width:520px;width:90%}
+</style>
+</head>
+<body>
+<div class="toast" id="toast">✓ <span id="toast-msg"></span></div>
+
+<!-- LOGIN -->
+<div id="login-page">
+<div id="pw" style="min-height:100vh;background:#2C1810;display:flex;align-items:center;justify-content:center;font-family:Inter,sans-serif;padding:20px">
+ <div id="pb" style="text-align:center;width:300px">
+  <svg width="52" height="52" viewBox="-46 -46 92 92" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:0 auto 10px">
+   <defs><linearGradient id="plg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#E8967A"/><stop offset="100%" stop-color="#C4522A"/></linearGradient></defs>
+   <polygon points="0,-42 36,-21 36,21 0,42 -36,21 -36,-21" fill="none" stroke="#E8967A" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.25"/>
+   <polygon points="0,-31 27,-15 27,15 0,31 -27,15 -27,-15" fill="none" stroke="url(#plg)" stroke-width="2"/>
+   <polygon points="0,-18 16,-9 16,9 0,18 -16,9 -16,-9" fill="url(#plg)" opacity="0.2"/>
+   <rect x="-2.5" y="-13" width="5" height="26" rx="2.5" fill="url(#plg)"/>
+   <rect x="-13" y="-2.5" width="26" height="5" rx="2.5" fill="url(#plg)"/>
+   <circle cx="0" cy="0" r="4" fill="url(#plg)"/>
+  </svg>
+  <div style="font-family:'Cormorant Garamond',serif;font-size:26px;color:#fff;font-style:italic;letter-spacing:-.3px;margin-bottom:2px">Imuno<span style="color:#E8967A">.</span>Way</div>
+  <div style="font-size:8.5px;color:rgba(255,255,255,.25);letter-spacing:2.5px;text-transform:uppercase;margin-bottom:20px">Plataforma de Imunobiológicos</div>
+  <div style="background:rgba(196,82,42,.12);border:1px solid rgba(232,150,122,.2);border-radius:14px;padding:12px 20px;margin:0 auto 22px;width:100%">
+   <p style="font-size:8.5px;font-weight:700;color:#E8967A;letter-spacing:2px;text-transform:uppercase;margin:0 0 7px 0;text-align:center">Sistema exclusivo</p>
+   <p style="font-family:'Cormorant Garamond',serif;font-size:18px;color:#fff;font-style:italic;margin:0 0 3px 0;text-align:center">Dra. Camila Ventura</p>
+   <p style="font-size:10.5px;color:rgba(255,255,255,.45);letter-spacing:.5px;margin:0;text-align:center">Imunologia e Alergia</p>
+  </div>
+  <div id="plw" style="width:54px;height:54px;background:rgba(196,82,42,.12);border:1.5px solid rgba(232,150,122,.22);border-radius:15px;display:flex;align-items:center;justify-content:center;margin:0 auto 13px;transition:all .3s">
+   <svg id="plsvg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#E8967A" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+  </div>
+  <div style="font-size:14px;font-weight:600;color:rgba(255,255,255,.85);margin-bottom:3px">Acesso restrito</div>
+  <div style="font-size:11.5px;color:rgba(255,255,255,.3);margin-bottom:20px">Digite seu código de acesso</div>
+  <div id="pdr" style="margin-bottom:22px">
+   <div class="pd" id="pd0"></div><div class="pd" id="pd1"></div><div class="pd" id="pd2"></div><div class="pd" id="pd3"></div><div class="pd" id="pd4"></div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:230px;margin:0 auto 12px">
+   <button class="pk" onclick="pk('1')">1</button><button class="pk" onclick="pk('2')">2</button><button class="pk" onclick="pk('3')">3</button>
+   <button class="pk" onclick="pk('4')">4</button><button class="pk" onclick="pk('5')">5</button><button class="pk" onclick="pk('6')">6</button>
+   <button class="pk" onclick="pk('7')">7</button><button class="pk" onclick="pk('8')">8</button><button class="pk" onclick="pk('9')">9</button>
+   <button class="pk pk-sm" onclick="pkClear()">Limpar</button><button class="pk" onclick="pk('0')">0</button><button class="pk pk-sm" onclick="pkDel()">⌫</button>
+  </div>
+  <div id="pmsg" style="height:16px;font-size:11.5px;font-weight:600;color:#E24B4A;margin-bottom:14px"></div>
+  <div style="height:1px;background:rgba(255,255,255,.07);margin-bottom:14px"></div>
+  <button onclick="pkGoogle()" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.4);border-radius:10px;padding:10px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">G &nbsp;&nbsp; Continuar com Google</button>
+ </div>
+</div>
+</div>
+
+<!-- MAIN APP -->
+<div id="main-app" class="app" style="display:none">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div style="display:flex;align-items:center;gap:11px">
+        <svg width="40" height="40" viewBox="-46 -46 92 92" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="sl1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#E8967A"/><stop offset="100%" stop-color="#C4522A"/></linearGradient></defs><polygon points="0,-42 36,-21 36,21 0,42 -36,21 -36,-21" fill="none" stroke="#E8967A" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.4"/><polygon points="0,-31 27,-15 27,15 0,31 -27,15 -27,-15" fill="none" stroke="url(#sl1)" stroke-width="1.8"/><polygon points="0,-18 16,-9 16,9 0,18 -16,9 -16,-9" fill="url(#sl1)" opacity="0.15"/><rect x="-2.5" y="-13" width="5" height="26" rx="2.5" fill="url(#sl1)"/><rect x="-13" y="-2.5" width="26" height="5" rx="2.5" fill="url(#sl1)"/><circle cx="0" cy="-31" r="3" fill="#E8967A"/><circle cx="27" cy="-15" r="3" fill="#F5C4AD"/><circle cx="27" cy="15" r="3" fill="#F5C4AD"/><circle cx="0" cy="31" r="3" fill="#E8967A"/><circle cx="-27" cy="15" r="3" fill="#F5C4AD"/><circle cx="-27" cy="-15" r="3" fill="#E8967A"/><circle cx="0" cy="0" r="5" fill="url(#sl1)"/></svg>
+        <div><div class="wordmark">Imuno<span class="dot">.</span>Way</div><div class="sub">Plataforma de Imunobiológicos</div></div>
+      </div>
+    </div>
+    <div class="doctor-strip" style="text-align:center">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0">
+        <div id="doc-photo-wrap" onclick="document.getElementById('doc-photo-input').click()" style="width:72px;height:72px;border-radius:50%;background:rgba(44,24,16,.4);border:2px solid rgba(232,150,122,.35);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;margin:0 auto 10px;transition:border-color .2s;flex-shrink:0" title="Clique para adicionar sua foto">
+          <img id="doc-photo-img" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:none;border-radius:50%">
+          <svg id="doc-photo-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(232,150,122,.5)" stroke-width="1.4" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        </div>
+        <input type="file" id="doc-photo-input" accept="image/*" style="display:none">
+        <div class="ds-label" style="margin-bottom:4px">Sistema personalizado para</div>
+        <div class="ds-name">Dra. Camila Ventura</div>
+        <div class="ds-spec">Imunologia e Alergia</div>
+      </div>
+    </div>
+    <div style="padding:10px 0;flex:1;overflow-y:auto">
+      <div class="nav-item active" id="nav-dashboard" onclick="showPage('dashboard',this)"><span class="ni-icon">◈</span> Dashboard</div>
+      <div class="nav-item" id="nav-pacientes" onclick="showPage('pacientes',this)"><span class="ni-icon">◉</span> Pacientes</div>
+      <div class="nav-item" id="nav-novo" onclick="showPage('novo',this)"><span class="ni-icon">＋</span> Novo Paciente</div>
+      <div class="nav-item" id="nav-alertas" onclick="showPage('alertas',this)"><span class="ni-icon">⚠</span> Pendências<span style="margin-left:auto;background:#f59e0b;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:100px" id="alert-count">0</span></div>
+      <div class="nav-item" id="nav-usuarios" onclick="showPage('usuarios',this)"><span class="ni-icon">◎</span> Usuários</div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-pill">
+        <div style="width:34px;height:34px;flex-shrink:0;display:flex;align-items:center;justify-content:center"><svg width="32" height="32" viewBox="-46 -46 92 92" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="fp1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#E8967A"/><stop offset="100%" stop-color="#C4522A"/></linearGradient></defs><polygon points="0,-31 27,-15 27,15 0,31 -27,15 -27,-15" fill="none" stroke="url(#fp1)" stroke-width="2"/><rect x="-2.5" y="-13" width="5" height="26" rx="2.5" fill="url(#fp1)"/><rect x="-13" y="-2.5" width="26" height="5" rx="2.5" fill="url(#fp1)"/><circle cx="0" cy="0" r="4" fill="url(#fp1)"/></svg></div>
+        <div><div class="user-name">Dra. Camila Ventura</div><div class="user-role">Administradora</div></div>
+        <button onclick="doLogout()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:rgba(255,255,255,.3);font-size:16px">⏻</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-top">
+        <div class="page-title" id="page-title" style="display:flex;align-items:center;gap:9px">
+          <svg width="20" height="20" viewBox="-46 -46 92 92" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="tt1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#E8967A"/><stop offset="100%" stop-color="#C4522A"/></linearGradient></defs><polygon points="0,-31 27,-15 27,15 0,31 -27,15 -27,-15" fill="none" stroke="url(#tt1)" stroke-width="2.2"/><rect x="-2.5" y="-13" width="5" height="26" rx="2.5" fill="url(#tt1)"/><rect x="-13" y="-2.5" width="26" height="5" rx="2.5" fill="url(#tt1)"/><circle cx="0" cy="0" r="5" fill="url(#tt1)"/></svg>
+          <span id="page-title-text">Dashboard</span>
+        </div>
+        <div class="topbar-actions" id="topbar-actions">
+          <button class="btn btn-secondary" style="font-size:12px" onclick="toggleMoreMenu()">⋯ Exportar</button>
+          <button class="btn btn-primary" onclick="showPage('novo',document.getElementById('nav-novo'))">+ Novo Paciente</button>
+          <div class="tnav-dropdown" id="more-menu" style="top:48px;right:0;min-width:260px">
+            <div style="padding:6px 10px 4px;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px">Exportar dados</div>
+            <div class="tnav-dd-item" onclick="exportData('xlsx')">📊 Excel</div>
+            <div class="tnav-dd-item" onclick="exportData('pdf')">📄 PDF</div>
+            <div class="tnav-dd-item" onclick="exportData('word')">📝 Word</div>
+            <div style="height:1px;background:var(--border);margin:4px 6px"></div>
+            <div class="tnav-dd-item" onclick="downloadTemplate()">⬇ Baixar modelo CSV</div>
+          </div>
+        </div>
+      </div>
+      <div class="topbar-nav">
+        <div class="tnav-item active" id="tnav-dashboard" onclick="tnav('dashboard',this)">📊 Dashboard</div>
+        <div class="tnav-item" id="tnav-pacientes" onclick="tnav('pacientes',this)">👥 Pacientes</div>
+        <div class="tnav-item" id="tnav-novo" onclick="tnav('novo',this)">＋ Novo Paciente</div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div id="page-dashboard" class="page active">
+        <div class="dash-hero">
+          <div style="position:relative;z-index:1">
+            <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px">Bem-vinda de volta</div>
+            <h2 style="white-space:nowrap;font-size:26px">Gestão clínica de imunobiológicos</h2>
+            <p>Acompanhe seus pacientes, tratamentos e evolução clínica em tempo real.</p>
+            <div class="dash-hero-stats">
+              <div class="dhs"><div class="dhs-val" id="h-total">—</div><div class="dhs-lbl">Pacientes</div></div>
+              <div class="dhs"><div class="dhs-val" id="h-emuso">—</div><div class="dhs-lbl">Em uso</div></div>
+              <div class="dhs"><div class="dhs-val" id="h-pend" style="color:var(--accent)">—</div><div class="dhs-lbl">Pendências</div></div>
+            </div>
+          </div>
+          <div><svg width="140" height="140" viewBox="-46 -46 92 92" xmlns="http://www.w3.org/2000/svg" style="opacity:.75"><defs><linearGradient id="hg1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#F5C4AD"/><stop offset="100%" stop-color="#E8967A"/></linearGradient></defs><polygon points="0,-42 36,-21 36,21 0,42 -36,21 -36,-21" fill="none" stroke="#E8967A" stroke-width="0.6" stroke-dasharray="3,3" opacity="0.35"/><polygon points="0,-31 27,-15 27,15 0,31 -27,15 -27,-15" fill="none" stroke="url(#hg1)" stroke-width="1.4"/><polygon points="0,-18 16,-9 16,9 0,18 -16,9 -16,-9" fill="url(#hg1)" opacity="0.18"/><rect x="-2.2" y="-12" width="4.4" height="24" rx="2.2" fill="url(#hg1)"/><rect x="-12" y="-2.2" width="24" height="4.4" rx="2.2" fill="url(#hg1)"/><circle cx="0" cy="0" r="4.5" fill="url(#hg1)"/></svg></div>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi-card kpi-green"><div class="kpi-icon-wrap">👥</div><div class="kpi-label">Total de Pacientes</div><div class="kpi-value" id="k-total">—</div><div class="kpi-sub">na base</div></div>
+          <div class="kpi-card kpi-green"><div class="kpi-icon-wrap">💊</div><div class="kpi-label">Em Tratamento</div><div class="kpi-value" id="k-emuso">—</div><div class="kpi-sub">em uso ativo</div></div>
+          <div class="kpi-card kpi-warn"><div class="kpi-icon-wrap">🕐</div><div class="kpi-label">Em Análise</div><div class="kpi-value" id="k-analise">—</div><div class="kpi-sub">aguardando liberação</div></div>
+          <div class="kpi-card kpi-coral"><div class="kpi-icon-wrap">⚠️</div><div class="kpi-label">Pendências</div><div class="kpi-value" id="k-pend" style="color:var(--danger)">—</div><div class="kpi-sub">dados incompletos</div></div>
+        </div>
+        <div class="chart-grid">
+          <div class="chart-card"><div class="chart-title">Por Medicamento</div><div id="ch-med"></div></div>
+          <div class="chart-card"><div class="chart-title">Por Indicação Clínica</div><div id="ch-ind"></div></div>
+          <div class="chart-card"><div class="chart-title">Status dos Pacientes</div><div id="ch-status"></div></div>
+          <div class="chart-card"><div class="chart-title">Top Planos de Saúde</div><div id="ch-plano"></div></div>
+        </div>
+        <div class="chart-grid" style="grid-template-columns:1fr 1fr 1fr">
+          <div class="chart-card"><div class="chart-title">Local de Aplicação / Infusão</div><div id="ch-local"></div></div>
+          <div class="chart-card">
+            <div class="chart-title">Tipo de Consulta</div>
+            <div class="donut-wrap">
+              <svg width="90" height="90" viewBox="0 0 90 90" id="ch-donut"></svg>
+              <div class="donut-legend" id="ch-acesso-leg"></div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Novos Pacientes por Mês</div>
+            <div style="font-size:9px;color:var(--small);margin-bottom:6px;font-weight:500">Últimos 12 meses · data da 1ª consulta</div>
+            <div class="t-bars" id="timeline-bars"></div>
+            <div class="t-labels" id="timeline-labels"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PACIENTES -->
+      <div id="page-pacientes" class="page">
+        <div class="table-card">
+          <div class="table-header">
+            <div class="search-bar">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6b7c8d" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input id="search-inp" placeholder="Nome, medicamento, indicação..." oninput="filterTable(this.value)">
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <select style="font-size:12px;padding:5px 9px;width:auto" onchange="filterBy('status',this.value)">
+                <option value="">Todos status</option>
+                <option>Em uso</option><option>Em análise</option><option>Aguardando liberação</option><option>Desistiu</option><option>Não aderiu</option>
+              </select>
+              <select style="font-size:12px;padding:5px 9px;width:auto" onchange="filterBy('med',this.value)" id="filter-med">
+                <option value="">Todos medic.</option>
+              </select>
+            </div>
+          </div>
+          <div style="overflow-x:auto">
+            <table style="table-layout:fixed;width:100%">
+              <thead><tr>
+                <th style="width:16%">Paciente</th>
+                <th style="width:12%">Medicamento</th>
+                <th style="width:6%">Dose</th>
+                <th style="width:12%">Indicação</th>
+                <th style="width:7%">Acesso</th>
+                <th style="width:8%">Plano</th>
+                <th style="width:8%">Últ. Consulta</th>
+                <th style="width:7%">Sem Retorno</th>
+                <th style="width:7%">Status</th>
+                <th style="width:17%"></th>
+              </tr></thead>
+              <tbody id="ptbody"></tbody>
+            </table>
+          </div>
+          <div style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border)">
+            <span style="font-size:11.5px;color:var(--muted)" id="tbl-count"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- NOVO PACIENTE -->
+      <div id="page-novo" class="page">
+        <div class="form-wrap">
+          <div class="upload-banner" id="ub-main" onclick="document.getElementById('inp-single-pt').click()">
+            <input type="file" id="inp-single-pt" style="display:none" accept=".xlsx,.xls,.csv,.json,.txt,.ods,.pdf,.doc,.docx" onchange="readPatientFile(this);this.value=''">
+            <div class="ub-icon">⬆️</div>
+            <div class="ub-text"><h4>Importar dados dos Pacientes</h4><p>Suba o arquivo com os dados do paciente. O sistema preenche todos os campos automaticamente.</p></div>
+            <button class="ub-btn" onclick="event.stopPropagation();document.getElementById('inp-single-pt').click()">Selecionar arquivo</button>
+            <div class="parse-overlay" id="single-parse-overlay"><div class="parse-spinner"></div><span style="font-size:13px;font-weight:700;color:var(--muted)">Lendo arquivo...</span></div>
+          </div>
+          <div class="filled-notice" id="single-filled-notice"><span id="single-filled-msg"></span><button onclick="clearFill()">✕</button></div>
+          <div class="ub-divider"><span>ou preencha manualmente</span></div>
+
+          <div class="form-tabs">
+            <div class="form-tab active" onclick="switchTab(0,this)">Identificação</div>
+            <div class="form-tab" onclick="switchTab(1,this)">Localização</div>
+            <div class="form-tab" onclick="switchTab(2,this)">Consulta e Acesso</div>
+            <div class="form-tab" onclick="switchTab(3,this)">Tratamento</div>
+            <div class="form-tab" onclick="switchTab(4,this)">Indicação Clínica</div>
+            <div class="form-tab" onclick="switchTab(5,this)">Dados Clínicos</div>
+          </div>
+
+          <!-- TAB 0: Identificação -->
+          <div class="tab-content active" id="tab-0">
+            <div class="form-section-title">Identificação do Paciente</div>
+            <div class="form-grid">
+              <div class="form-group full"><label>Nome completo *</label><input id="f-nome" type="text" placeholder="Nome completo do paciente"></div>
+              <div class="form-group"><label>Sexo *</label><select id="f-sexo"><option value="">Selecionar</option><option>Masculino</option><option>Feminino</option><option>Prefiro não informar</option></select></div>
+              <div class="form-group"><label>Data de nascimento *</label><input id="f-dn" type="date" onchange="calcIdade(this)"></div>
+              <div class="form-group"><label>Idade (calculada automaticamente)</label><input id="f-idade" type="text" readonly placeholder="Será calculada após DN"></div>
+              <div class="form-group"><label>Telefone</label><input id="f-tel" type="tel" placeholder="(21) 99999-9999"></div>
+              <div class="form-group"><label>E-mail</label><input id="f-email" type="email" placeholder="email@exemplo.com"></div>
+              <div class="form-group"><label>Nome da mãe</label><input id="f-mae" type="text" placeholder="Nome da mãe"></div>
+              <div class="form-group"><label>Nome do pai / responsável</label><input id="f-pai" type="text" placeholder="Nome do pai ou responsável"></div>
+              <div class="form-group full"><label>Plano de Saúde / Operadora *</label>
+                <select id="f-plano">
+                  <option value="">Sem plano / Selecionar</option>
+                  <option>Amil</option><option>Bradesco Saúde</option><option>SulAmérica</option><option>Unimed</option><option>Unimed Leste Fluminense</option><option>Hapvida</option><option>NotreDame Intermédica</option><option>Porto Seguro Saúde</option><option>Prevent Senior</option><option>Petrobras (Saúde)</option><option>Marinha do Brasil</option><option>Mediservice</option><option>Assim Saúde</option><option>Seguros Unimed</option><option>Caixa Seguradora Saúde</option><option>Alice</option><option>Allianz Saúde</option><option>Care Plus</option><option>Cassi</option><option>GEAP</option><option>Golden Cross</option><option>Itauseg Saúde</option><option>Omint</option><option>Postal Saúde</option><option>Qualicorp</option><option>Santa Helena Saúde</option><option>Sompo Saúde</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 1: Localização -->
+          <div class="tab-content" id="tab-1">
+            <div class="form-section-title">Localização</div>
+            <div class="form-grid">
+              <div class="form-group"><label>UF *</label><select id="f-uf" onchange="loadCidades(this.value)"><option value="">Selecionar UF</option></select></div>
+              <div class="form-group"><label>Cidade *</label><select id="f-cidade" onchange="loadBairros(this.value)"><option value="">Selecione a UF primeiro</option></select></div>
+              <div class="form-group"><label>Bairro</label><select id="f-bairro"><option value="">Selecione a cidade primeiro</option></select></div>
+            </div>
+          </div>
+
+          <!-- TAB 2: Consulta e Acesso -->
+          <div class="tab-content" id="tab-2">
+            <div class="form-section-title">Tipo de Consulta e Acesso</div>
+            <div class="form-grid">
+              <div class="form-group"><label>Tipo de consulta *</label><select id="f-tipo"><option value="">Selecionar</option><option>Particular</option><option>Convênio</option><option>SUS</option></select></div>
+              <div class="form-group"><label>Tipo de acesso ao medicamento *</label><select id="f-acesso"><option value="">Selecionar</option><option>Plano de Saúde</option><option>SUS</option><option>Judicializado</option><option>Recursos próprios</option></select></div>
+              <div class="form-group"><label>Data da última consulta</label><input type="date" id="f-ult-consulta" onchange="calcSemRetorno(this)"></div>
+              <div class="form-group"><label>Tempo sem retorno (calculado automaticamente)</label><input type="text" id="f-sem-retorno" readonly placeholder="Calculado após data da consulta"></div>
+              <div class="form-group"><label>Status do paciente</label><select id="f-status"><option value="">Selecionar</option><option>Em uso</option><option>Em análise</option><option>Aguardando liberação</option><option>Desistiu</option><option>Não aderiu</option><option>Defensoria</option><option>Laudo a ser entregue</option><option>Trocou de médico</option></select></div>
+              <div class="form-group"><label>Tempo para acesso (informado)</label><input type="text" id="f-tempo-acesso" placeholder="Ex: 45 dias, 2 meses..."></div>
+              <div class="form-group"><label>Local de aplicação / infusão</label>
+                <select id="f-local-aplic" onchange="togglePrestador(this)">
+                  <option value="">Selecionar</option>
+                  <option value="casa">Em casa (autoaplicação)</option>
+                  <option value="prestador">Consultório médico</option>
+                  <option value="prestador">Clínica de infusão</option>
+                  <option value="prestador">Hospital — ambulatório</option>
+                  <option value="prestador">Hospital — internação</option>
+                  <option value="prestador">Farmácia com serviço de aplicação</option>
+                  <option value="prestador">Unidade básica de saúde (UBS)</option>
+                  <option value="prestador">Home care</option>
+                </select>
+              </div>
+              <div class="form-group" id="prestador-wrap" style="display:none"><label>Nome do prestador / estabelecimento</label><input type="text" id="f-prestador" placeholder="Ex: Hospital São Lucas, Clínica Vida..."></div>
+            </div>
+          </div>
+
+          <!-- TAB 3: Tratamento -->
+          <div class="tab-content" id="tab-3">
+            <div class="form-section-title">Tratamento com Imunobiológico</div>
+            <div class="form-grid">
+              <div class="form-group"><label>Medicamento *</label>
+                <select id="f-med" onchange="autoFillLab(this)">
+                  <option value="" data-lab="">Selecionar medicamento</option>
+                  <option data-lab="Bristol Myers Squibb">Orencia (abatacepte)</option><option data-lab="Pfizer">Cibinqo (abrocitinibe)</option><option data-lab="AbbVie">Humira (adalimumabe)</option><option data-lab="Sobi">Kineret (anakinra)</option><option data-lab="Lilly">Olumiant (baricitinibe)</option><option data-lab="GSK">Benlysta (belimumabe)</option><option data-lab="AstraZeneca">Fasenra (benralizumabe)</option><option data-lab="Novartis">Ilaris (canaquinumabe)</option><option data-lab="UCB">Cimzia (certolizumabe pegol)</option><option data-lab="Pfizer">Xeljanz / Xeljanz XR (tofacitinibe)</option><option data-lab="Amgen">Prolia / Xgeva (denosumabe)</option><option data-lab="Sanofi / Regeneron">Dupixent (dupilumabe)</option><option data-lab="Alexion">Soliris (eculizumabe)</option><option data-lab="Pfizer">Enbrel (etanercepte)</option><option data-lab="Novartis">Jakavi (ruxolitinibe)</option><option data-lab="Janssen-Cilag">Tremfya (guselcumabe)</option><option data-lab="Janssen-Cilag">Remicade (infliximabe)</option><option data-lab="Lilly">Taltz (ixekizumabe)</option><option data-lab="Lilly">Ebglyss (lebrikizumabe)</option><option data-lab="GSK">Nucala (mepolizumabe)</option><option data-lab="Biogen">Tysabri (natalizumabe)</option><option data-lab="Roche">Ocrevus (ocrelizumabe)</option><option data-lab="Novartis">Kesimpta (ofatumumabe)</option><option data-lab="Novartis">Xolair (omalizumabe)</option><option data-lab="Alexion">Ultomiris (ravulizumabe)</option><option data-lab="Teva">Cinqair (reslizumabe)</option><option data-lab="AbbVie">Skyrizi (risanquizumabe)</option><option data-lab="Roche">Rituxan / MabThera (rituximabe)</option><option data-lab="Amgen">Evenity (romosozumabe)</option><option data-lab="Sanofi">Kevzara (sarilumabe)</option><option data-lab="Roche">Enspryng (satralizumabe)</option><option data-lab="Novartis">Cosentyx (secuquinumabe)</option><option data-lab="AstraZeneca">Tezspire (tezepelumabe)</option><option data-lab="Sun Pharma">Ilumya (tildraquizumabe)</option><option data-lab="Roche">RoActemra / Actemra (tocilizumabe)</option><option data-lab="Pfizer">Litfulo (ritlecitinibe)</option><option data-lab="LEO Pharma">Adtralza (traloquinumabe)</option><option data-lab="AbbVie">Rinvoq (upadacitinibe)</option><option data-lab="Janssen-Cilag">Stelara (ustequinumabe)</option><option data-lab="Takeda">Entyvio (vedolizumabe)</option>
+                </select>
+              </div>
+              <div class="form-group"><label>Laboratório (automático)</label><input type="text" id="f-lab" readonly placeholder="Preenchido ao selecionar o med."></div>
+              <div class="form-group"><label>Dose (apresentações disponíveis)</label><select id="f-dose"><option value="">Selecione o medicamento primeiro</option></select></div>
+              <div class="form-group"><label>Posologia</label><input type="text" id="f-posologia" placeholder="Ex: 1 seringa SC"></div>
+              <div class="form-group"><label>Intervalo</label><select id="f-intervalo"><option value="">Selecionar</option><option>Semanal</option><option>2 semanas</option><option>4 semanas</option><option>6 semanas</option><option>8 semanas</option><option>12 semanas</option><option>Mensal</option><option>Trimestral</option></select></div>
+              <div class="form-group"><label>Data da prescrição</label><input type="date" id="f-prescricao"></div>
+              <div class="form-group"><label>Data de entrada na OPS</label><input type="date" id="f-ops"></div>
+              <div class="form-group"><label>Data de início do tratamento</label><input type="date" id="f-inicio"></div>
+              <div class="form-group"><label>Nome do consultor / MSL</label><input type="text" id="f-consultor" placeholder="Nome do consultor do medicamento"></div>
+            </div>
+
+            <div class="form-section-title" style="margin-top:18px">Resposta ao Tratamento</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+              <div>
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+                  <div style="width:22px;height:22px;border-radius:6px;background:#E1F5EE;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#0F6E56;flex-shrink:0">P</div>
+                  <label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin:0">Percepção do Paciente</label>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:5px" id="perc-paciente-cards">
+                  <div class="resp-card" data-field="f-perc-paciente" data-value="Estou muito melhor" onclick="selectRespCard(this)" style="border-left:3px solid #1D9E75"><div class="resp-dot" style="background:#1D9E75"></div><div><div class="resp-label">Estou muito melhor</div><div class="resp-sub">Melhora expressiva, qualidade de vida restaurada</div></div></div>
+                  <div class="resp-card" data-field="f-perc-paciente" data-value="Estou melhor" onclick="selectRespCard(this)" style="border-left:3px solid #5DCAA5"><div class="resp-dot" style="background:#5DCAA5"></div><div><div class="resp-label">Estou melhor</div><div class="resp-sub">Melhora clara e perceptível no dia a dia</div></div></div>
+                  <div class="resp-card" data-field="f-perc-paciente" data-value="Estou um pouco melhor" onclick="selectRespCard(this)" style="border-left:3px solid #FAC775"><div class="resp-dot" style="background:#FAC775"></div><div><div class="resp-label">Estou um pouco melhor</div><div class="resp-sub">Leve melhora, ainda com limitações</div></div></div>
+                  <div class="resp-card" data-field="f-perc-paciente" data-value="Estou igual a antes" onclick="selectRespCard(this)" style="border-left:3px solid #B4B2A9"><div class="resp-dot" style="background:#B4B2A9"></div><div><div class="resp-label">Estou igual a antes</div><div class="resp-sub">Sem mudança percebida</div></div></div>
+                  <div class="resp-card" data-field="f-perc-paciente" data-value="Oscila — às vezes melhor, às vezes pior" onclick="selectRespCard(this)" style="border-left:3px solid #EF9F27"><div class="resp-dot" style="background:#EF9F27"></div><div><div class="resp-label">Oscila — às vezes melhor, às vezes pior</div><div class="resp-sub">Resposta instável ou inconstante</div></div></div>
+                  <div class="resp-card" data-field="f-perc-paciente" data-value="Estou pior" onclick="selectRespCard(this)" style="border-left:3px solid #E24B4A"><div class="resp-dot" style="background:#E24B4A"></div><div><div class="resp-label">Estou pior</div><div class="resp-sub">Piora dos sintomas após o tratamento</div></div></div>
+                  <div class="resp-card" data-field="f-perc-paciente" data-value="Não sei avaliar ainda" onclick="selectRespCard(this)" style="border-left:3px solid #888780"><div class="resp-dot" style="background:#888780"></div><div><div class="resp-label">Não sei avaliar ainda</div><div class="resp-sub">Tratamento muito recente ou incerto</div></div></div>
+                </div>
+                <input type="hidden" id="f-perc-paciente" value="">
+                <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)"><label>Observação do Paciente</label><textarea id="f-obs-paciente" rows="2" placeholder="Relato livre sobre como está se sentindo..."></textarea></div>
+              </div>
+              <div>
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+                  <div style="width:22px;height:22px;border-radius:6px;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#185FA5;flex-shrink:0">M</div>
+                  <label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin:0">Avaliação do Médico</label>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:5px" id="aval-medico-cards">
+                  <div class="resp-card" data-field="f-aval-medico" data-value="Remissão completa" onclick="selectRespCard(this)" style="border-left:3px solid #1D9E75"><div class="resp-dot" style="background:#1D9E75"></div><div><div class="resp-label">Remissão completa</div><div class="resp-sub">Sem sinais ou sintomas ativos da doença</div></div></div>
+                  <div class="resp-card" data-field="f-aval-medico" data-value="Resposta clínica boa" onclick="selectRespCard(this)" style="border-left:3px solid #5DCAA5"><div class="resp-dot" style="background:#5DCAA5"></div><div><div class="resp-label">Resposta clínica boa</div><div class="resp-sub">Melhora significativa dos marcadores e sintomas</div></div></div>
+                  <div class="resp-card" data-field="f-aval-medico" data-value="Resposta clínica parcial" onclick="selectRespCard(this)" style="border-left:3px solid #FAC775"><div class="resp-dot" style="background:#FAC775"></div><div><div class="resp-label">Resposta clínica parcial</div><div class="resp-sub">Melhora presente, mas incompleta</div></div></div>
+                  <div class="resp-card" data-field="f-aval-medico" data-value="Doença estável" onclick="selectRespCard(this)" style="border-left:3px solid #B4B2A9"><div class="resp-dot" style="background:#B4B2A9"></div><div><div class="resp-label">Doença estável</div><div class="resp-sub">Sem progressão, mas sem melhora expressiva</div></div></div>
+                  <div class="resp-card" data-field="f-aval-medico" data-value="Resposta insuficiente" onclick="selectRespCard(this)" style="border-left:3px solid #EF9F27"><div class="resp-dot" style="background:#EF9F27"></div><div><div class="resp-label">Resposta insuficiente</div><div class="resp-sub">Abaixo do esperado para o biológico usado</div></div></div>
+                  <div class="resp-card" data-field="f-aval-medico" data-value="Falha terapêutica" onclick="selectRespCard(this)" style="border-left:3px solid #E24B4A"><div class="resp-dot" style="background:#E24B4A"></div><div><div class="resp-label">Falha terapêutica</div><div class="resp-sub">Sem resposta ao tratamento atual</div></div></div>
+                  <div class="resp-card" data-field="f-aval-medico" data-value="Piora / Progressão da doença" onclick="selectRespCard(this)" style="border-left:3px solid #A32D2D"><div class="resp-dot" style="background:#A32D2D"></div><div><div class="resp-label">Piora / Progressão da doença</div><div class="resp-sub">Agravamento clínico sob tratamento</div></div></div>
+                </div>
+                <input type="hidden" id="f-aval-medico" value="">
+                <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+                  <div style="display:flex;gap:10px;margin-bottom:8px"><div class="form-group" style="flex:1;margin:0"><label>Data da Avaliação</label><input type="date" id="f-aval-data"></div></div>
+                  <label>Justificativa Clínica</label>
+                  <textarea id="f-obs-medico" rows="2" placeholder="Ajuste de dose, decisão de troca, resposta a exames..."></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 4: Indicação -->
+          <div class="tab-content" id="tab-4">
+            <div class="form-section-title">Indicação Clínica</div>
+            <div class="form-grid">
+              <div class="form-group"><label>Indicação clínica primária *</label>
+                <select id="f-ind" onchange="autoCid(this,'f-cid')">
+                  <option value="" data-cid="">Selecionar</option>
+                  <option data-cid="L63.9">Alopecia areata grave</option><option data-cid="D47.4">Anemia em mielofibrose</option><option data-cid="M31.6">Arterite de células gigantes</option><option data-cid="M08.3">Artrite idiopática juvenil poliarticular</option><option data-cid="M08.2">Artrite idiopática juvenil sistêmica</option><option data-cid="L40.5">Artrite psoriásica</option><option data-cid="M08.1">Artrite relacionada à entesite</option><option data-cid="M05-M06">Artrite reumatoide</option><option data-cid="J45.0">Asma alérgica grave</option><option data-cid="J45.9">Asma eosinofílica grave</option><option data-cid="J45.9">Asma grave</option><option data-cid="K51">Colite ulcerativa</option><option data-cid="U07.1">COVID-19 hospitalizados c/ O₂</option><option data-cid="L20.9">Dermatite atópica moderada a grave</option><option data-cid="K50">Doença de Crohn</option><option data-cid="M06.1">Doença de Still do adulto</option><option data-cid="G36.0">NMOSD / DENMO AQP4+</option><option data-cid="J44.9">DPOC com inflamação tipo 2</option><option data-cid="G35">Esclerose múltipla recorrente</option><option data-cid="G35">Esclerose múltipla primariamente progressiva</option><option data-cid="K20">Esofagite eosinofílica</option><option data-cid="M45">Espondilite anquilosante</option><option data-cid="M46.8">Espondiloartrite axial não radiográfica</option><option data-cid="M04.1">Febre familiar do Mediterrâneo</option><option data-cid="M31.3">Granulomatose com poliangiite</option><option data-cid="M30.1">Granulomatose eosinofílica c/ poliangiite</option><option data-cid="D59.5">Hemoglobinúria paroxística noturna</option><option data-cid="L73.2">Hidradenite supurativa</option><option data-cid="M32.9">Lúpus eritematoso sistêmico</option><option data-cid="G70.0">Miastenia gravis generalizada</option><option data-cid="D47.4">Mielofibrose</option><option data-cid="M32.1">Nefrite lúpica</option><option data-cid="M81.9">Osteoporose masculina</option><option data-cid="M81.0">Osteoporose pós-menopáusica</option><option data-cid="L10.0">Pênfigo vulgar</option><option data-cid="M31.7">Poliangiite microscópica</option><option data-cid="D45">Policitemia vera</option><option data-cid="L28.1">Prurigo nodular</option><option data-cid="L40.0">Psoríase em placas</option><option data-cid="J32.9">Rinossinusite crônica com pólipos nasais</option><option data-cid="D59.3">Síndrome hemolítico-urêmica atípica</option><option data-cid="D72.1">Síndrome hipereosinofílica</option><option data-cid="M04.2">Síndromes periódicas (CAPS)</option><option data-cid="L50.1">Urticária crônica espontânea</option><option data-cid="H30.9">Uveíte não infecciosa</option>
+                </select>
+              </div>
+              <div class="form-group"><label>CID-10 primário (automático)</label><input type="text" id="f-cid" readonly placeholder="Preenchido pela indicação"></div>
+              <div class="form-group"><label>Indicação secundária (opcional)</label>
+                <select id="f-ind2" onchange="autoCid(this,'f-cid2')">
+                  <option value="" data-cid="">Nenhuma</option>
+                  <option data-cid="L20.9">Dermatite atópica moderada a grave</option><option data-cid="J45.9">Asma grave</option><option data-cid="J32.9">Rinossinusite crônica com pólipos nasais</option><option data-cid="L28.1">Prurigo nodular</option><option data-cid="K20">Esofagite eosinofílica</option><option data-cid="L50.1">Urticária crônica espontânea</option><option data-cid="H30.9">Uveíte não infecciosa</option><option data-cid="L40.0">Psoríase em placas</option>
+                </select>
+              </div>
+              <div class="form-group"><label>CID-10 secundário (automático)</label><input type="text" id="f-cid2" readonly placeholder="Preenchido pela indicação"></div>
+              <div class="form-group full"><label>Médico compartilhado / co-tratante</label><input type="text" id="f-medico" placeholder="Nome do médico co-tratante (se houver)"></div>
+            </div>
+          </div>
+
+          <!-- TAB 5: Dados Clínicos -->
+          <div class="tab-content" id="tab-5">
+            <div class="form-section-title">📎 Upload de Exames</div>
+            <div class="upload-zone" id="uz-exams" onclick="document.getElementById('inp-exams').click()" ondrop="handleDrop(event,'exams')" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" style="margin-bottom:10px">
+              <input type="file" id="inp-exams" style="display:none" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.csv,.docx" multiple onchange="handleExamUpload(this)">
+              <span class="uz-icon">🔬</span>
+              <h3>Arraste exames ou clique para selecionar</h3>
+              <p>XLSX, CSV, PDF, JPG, PNG — o sistema extrai os dados automaticamente</p>
+            </div>
+            <div id="exam-parse-status" class="parse-status"></div>
+            <div class="file-list" id="exam-file-list"></div>
+
+            <div class="form-section-title" style="margin-top:18px">🧬 IgE e Eosinófilos</div>
+            <div class="form-grid-3">
+              <div class="form-group"><label>IgE Específica</label><input type="text" id="f-ige-esp" placeholder="Ex: IgE DP/BL..."></div>
+              <div class="form-group"><label>IgE Total (UI/mL)</label><input type="number" id="f-ige-total" placeholder="Valor"></div>
+              <div class="form-group"><label>Data IgE</label><input type="date" id="f-ige-data"></div>
+              <div class="form-group"><label>Eosinófilos (céls/µL)</label><input type="number" id="f-eosino" placeholder="Valor"></div>
+              <div class="form-group"><label>Data Eosinófilos</label><input type="date" id="f-eosino-data"></div>
+              <div class="form-group"><label>FENO (ppb)</label><input type="number" id="f-feno" placeholder="Valor"></div>
+            </div>
+
+            <div class="form-section-title" style="margin-top:4px">🫁 Função Pulmonar</div>
+            <div class="form-grid">
+              <div class="form-group"><label>Espirometria</label><input type="text" id="f-espiro" placeholder="Ex: VEF1 78%, CVF 90%..."></div>
+              <div class="form-group"><label>Pletismografia</label><input type="text" id="f-pleti" placeholder="Resultado"></div>
+            </div>
+
+            <!-- SCORES — Opção B: linha única + pills -->
+            <div class="form-section-title" style="margin-top:4px">📊 Scores Clínicos</div>
+            <div class="score-entry">
+              <select id="score-select">
+                <option value="">Selecionar score...</option>
+                <optgroup label="Dermatite Atópica"><option>SCORAD (0–103)</option><option>EASI (0–72)</option><option>DLQI (0–30)</option><option>POEM (0–28)</option><option>IGA-DA (0–4)</option></optgroup>
+                <optgroup label="Psoríase"><option>PASI (0–72)</option><option>BSA Psoríase (%)</option><option>DLQI-PSO (0–30)</option><option>IGA-PSO (0–4)</option></optgroup>
+                <optgroup label="Asma"><option>ACT (5–25)</option><option>ACQ (0–6)</option><option>VEF1 (% previsto)</option><option>GINA Estadio (1–5)</option></optgroup>
+                <optgroup label="Urticária"><option>UAS7 (0–42)</option><option>ISS7 (0–21)</option><option>CU-Q2oL (0–100)</option></optgroup>
+                <optgroup label="Artrite/Espondilite"><option>DAS28 (0–9,4)</option><option>BASDAI (0–10)</option><option>BASFI (0–10)</option><option>HAQ (0–3)</option><option>CDAI (0–76)</option></optgroup>
+                <optgroup label="DII"><option>CDAI-Crohn (&lt;150 remissão)</option><option>Mayo-CU (0–12)</option><option>HBI (&lt;5 remissão)</option></optgroup>
+                <optgroup label="Lúpus/EM"><option>SLEDAI (0–105)</option><option>EDSS (0–10)</option></optgroup>
+                <optgroup label="Prurigo Nodular"><option>IGA-PN (0–4)</option><option>NRS Prurido PN (0–10)</option></optgroup>
+                <optgroup label="Geral"><option>SF-36 (0–100)</option><option>EQ-5D (0–1)</option><option>VAS Dor (0–10)</option></optgroup>
+              </select>
+              <input type="number" id="score-val" placeholder="Valor" step="0.1" min="0" style="width:100px">
+              <input type="date" id="score-date" style="width:140px">
+              <button class="score-add-btn" onclick="addScore()">＋ Adicionar</button>
+            </div>
+            <!-- Pills dos scores adicionados -->
+            <div class="score-pills" id="score-pills"></div>
+
+            <div class="form-section-title" style="margin-top:16px">📝 Outras Observações</div>
+            <div class="form-group full"><textarea id="f-outros" rows="3" placeholder="Comorbidades, observações clínicas relevantes..."></textarea></div>
+          </div>
+
+          <div style="display:flex;gap:8px;justify-content:space-between;padding-top:14px;border-top:1px solid var(--border);margin-top:8px">
+            <button class="btn btn-secondary" onclick="showPage('pacientes',document.getElementById('nav-pacientes'))">Cancelar</button>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-secondary" onclick="prevTab()">← Anterior</button>
+              <button class="btn btn-secondary" onclick="nextTab()">Próximo →</button>
+              <button class="btn btn-primary" onclick="savePaciente()">✓ Salvar Paciente</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DETALHE -->
+      <div id="page-detalhe" class="page">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+          <button class="btn btn-secondary" onclick="showPage('pacientes',document.getElementById('nav-pacientes'))">← Voltar</button>
+        </div>
+        <div id="detalhe-content"></div>
+      </div>
+
+      <!-- ALERTAS -->
+      <div id="page-alertas" class="page">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="section-card"><div class="section-card-title" style="color:var(--danger);font-weight:600">⚑ Dados Clínicos Incompletos</div><div id="alert-sem-cid"></div></div>
+          <div class="section-card"><div class="section-card-title" style="color:#92400e">⚠ Sem Retorno Há +90 Dias</div><div id="alert-sem-retorno"></div></div>
+          <div class="section-card"><div class="section-card-title" style="color:var(--brand)">ℹ Status Para Revisão</div><div id="alert-status"></div></div>
+        </div>
+      </div>
+
+      <!-- USUÁRIOS -->
+      <div id="page-usuarios" class="page">
+        <div class="table-card">
+          <div class="table-header">
+            <span style="font-size:13px;font-weight:600">Usuários do Sistema</span>
+            <button class="btn btn-primary" onclick="window.openNewUserModal()">+ Novo</button>
+          </div>
+          <table style="table-layout:fixed;width:100%">
+            <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              <tr>
+                <td><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:10px;background:var(--brand)">CV</div>Dra. Camila Ventura</div></td>
+                <td style="color:var(--muted)">camila@imunoWay.med.br</td>
+                <td><span class="badge badge-mauve">Admin</span></td>
+                <td><span class="badge badge-green">Ativo</span></td>
+                <td>
+                  <button onclick="openUserModal('CV','Dra. Camila Ventura','camila@imunoWay.med.br','Admin')" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:7px;background:var(--brand-light);color:var(--brand);border:1px solid var(--border2);cursor:pointer;font-size:11.5px;font-weight:700;font-family:Inter,sans-serif">✏️ Editar</button>
+                </td>
+              </tr>
+              <tr>
+                <td><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:10px">SE</div>Secretária</div></td>
+                <td style="color:var(--muted)">secretaria@imunoWay.med.br</td>
+                <td><span class="badge badge-blue">Visualizador</span></td>
+                <td><span class="badge badge-green">Ativo</span></td>
+                <td>
+                  <button onclick="openUserModal('SE','Secretária','secretaria@imunoWay.med.br','Visualizador')" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:7px;background:var(--brand-light);color:var(--brand);border:1px solid var(--border2);cursor:pointer;font-size:11.5px;font-weight:700;font-family:Inter,sans-serif">✏️ Editar</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR USUÁRIO -->
+<div class="modal-overlay" id="user-modal" onclick="if(event.target===this)closeUserModal()">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-header">
+      <h3>Editar Usuário</h3>
+      <button class="modal-close" onclick="closeUserModal()">✕</button>
+    </div>
+    <div class="modal-body" style="padding:20px 22px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1.5px solid var(--border)">
+        <div class="avatar" id="user-modal-av" style="width:48px;height:48px;font-size:16px;border-radius:14px">CV</div>
+        <div>
+          <div style="font-size:15px;font-weight:700;color:var(--text)" id="user-modal-name"></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px" id="user-modal-email"></div>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group full"><label>Nome completo</label><input type="text" id="um-nome"></div>
+        <div class="form-group"><label>E-mail</label><input type="email" id="um-email"></div>
+        <div class="form-group"><label>Perfil</label><select id="um-perfil"><option>Admin</option><option>Médico</option><option>Visualizador</option><option>Secretária</option></select></div>
+        <div class="form-group"><label>Status</label><select id="um-status"><option>Ativo</option><option>Inativo</option></select></div>
+        <div class="form-group full" style="padding-top:12px;border-top:1.5px solid var(--border)">
+          <label>Nova senha de acesso ao Imuno.Way</label>
+          <input type="password" id="um-senha" placeholder="Deixe em branco para manter a mesma senha" maxlength="20" style="letter-spacing:2px;font-size:13px">
+          <div style="font-size:10.5px;color:var(--small);margin-top:4px">Mínimo 4 caracteres. A nova senha será solicitada na próxima abertura do Imuno.Way.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="btn btn-primary" onclick="saveUser()">💾 Salvar alterações</button>
+        <button class="btn btn-secondary" onclick="closeUserModal()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EXCLUIR PACIENTE -->
+<div class="modal-overlay" id="delete-modal" onclick="if(event.target===this)closeDeleteModal()">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-header" style="border-bottom-color:var(--danger-border)">
+      <h3 style="color:var(--danger)">Confirmar exclusão</h3>
+      <button class="modal-close" onclick="closeDeleteModal()">✕</button>
+    </div>
+    <div class="modal-body" style="padding:24px">
+      <div style="background:var(--danger-bg);border:1.5px solid var(--danger-border);border-radius:12px;padding:14px 16px;margin-bottom:20px">
+        <div style="font-size:11px;color:var(--danger);font-weight:700;margin-bottom:4px;text-transform:uppercase">Paciente</div>
+        <div style="font-size:15px;font-weight:700;color:var(--text)" id="delete-patient-name"></div>
+      </div>
+      <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:20px">Esta ação é <strong style="color:var(--text)">permanente</strong> e não pode ser desfeita.</p>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-secondary" style="flex:1;justify-content:center" onclick="closeDeleteModal()">Cancelar</button>
+        <button style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px;border-radius:9px;background:var(--danger);color:#fff;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif" onclick="executeDelete()">Sim, excluir</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VISUALIZADOR DE ARQUIVO -->
+<div class="modal-overlay" id="file-modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <div class="modal-header"><h3 id="modal-title">Visualizador</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body" id="modal-body-content"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONSTANTES E CONFIGURAÇÕES
+// ============================================================
+const PATIENTS = [];
+let filteredPts = [];
+let curTab = 0;
+
+const SUPA_URL = 'https://nekqsuvjzwzprcsozwnr.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5la3FzdXZqend6cHJjc296d25yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNDc0ODYsImV4cCI6MjA5NDYyMzQ4Nn0.uhTTUnDXqguR6uN1ZeE5T2yGA1EwB1i7rEe9MUfkszY';
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyWGRlZOYvKHt8Nn_oIA702YRY-ApdZjkKFycpZI9FbxJZhvX3cHctuX8sJnZn2PRvm/exec';
+var BACKUP_EMAILS = ['dra.camilaventura@yahoo.com.br', 'marlon.alves.costa@gmail.com'];
+
+// ============================================================
+// HELPERS DE DATA
+// ============================================================
+function fmtDate(s){if(!s)return '—';const d=new Date(s);if(isNaN(d))return s;return d.toLocaleDateString('pt-BR');}
+function daysSince(s){if(!s)return null;const d=new Date(s);if(isNaN(d))return null;return Math.floor((new Date()-d)/(1000*60*60*24));}
+function semRetornoText(uc){const d=daysSince(uc);if(d===null)return '—';if(d>365)return Math.floor(d/365)+'a '+Math.floor((d%365)/30)+'m';if(d>30)return Math.floor(d/30)+' meses';return d+' dias';}
+function semRetornoBadge(uc){const d=daysSince(uc);if(d===null)return '<span class="badge badge-gray">—</span>';const t=semRetornoText(uc);if(d>180)return '<span class="badge badge-red">'+t+'</span>';if(d>90)return '<span class="badge badge-orange">'+t+'</span>';return '<span class="badge badge-green">'+t+'</span>';}
+function statusBadge(s){const m={'Em uso':'badge-green','Em análise':'badge-orange','Aguardando liberação':'badge-mauve','Desistiu':'badge-red','Não aderiu':'badge-red','Defensoria':'badge-blue','Laudo a ser entregue':'badge-orange','Trocou de médico':'badge-gray'};return '<span class="badge '+(m[s]||'badge-gray')+'">'+(s||'—')+'</span>';}
+function parseDate(s){if(!s)return null;if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;const m=s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);if(m){const y=m[3].length===2?'20'+m[3]:m[3];return y+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');}return null;}
+
+// ============================================================
+// SUPABASE — CARREGAR PACIENTES
+// ============================================================
+function loadFromSheets(){
+  showSheetsStatus('Carregando pacientes...');
+  var medId = _session && _session.medico_id;
+  if(!medId){ hideSheetsStatus(); applyPatients(PATIENTS); return; }
+  fetch(SUPA_URL+'/rest/v1/pacientes?medico_id=eq.'+medId+'&order=nome.asc&limit=1000',{
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+  })
+  .then(function(r){return r.json();})
+  .then(function(rows){
+    if(rows && rows.length>0){
+      PATIENTS.length=0;
+      rows.forEach(function(row){
+        PATIENTS.push({
+          id:row.id, nome:row.nome||'', dn:row.dn||'', idade:row.idade||'', sexo:row.sexo||'',
+          tel:row.tel||'', email:row.email||'', mae:row.mae||'', plano:row.plano||'',
+          uf:row.uf||'', cidade:row.cidade||'', bairro:row.bairro||'',
+          tipo:row.tipo||'', acesso:row.acesso||'', ultConsulta:row.ult_consulta||'',
+          status:row.status||'', localApl:row.local_apl||'', med:row.med||'',
+          lab:row.lab||'', dose:row.dose||'', intervalo:row.intervalo||'',
+          posologia:row.posologia||'', indicacao:row.indicacao||'', cid:row.cid||'',
+          igeTotal:row.ige_total||'', eosino:row.eosino||'', feno:row.feno||'',
+          percPaciente:row.perc_paciente||'', avalMedico:row.aval_medico||'',
+          avalData:row.aval_data||'', obsPaciente:row.obs_paciente||'', obsMedico:row.obs_medico||''
+        });
+      });
+    }
+    applyPatients(PATIENTS);
+    hideSheetsStatus();
+  })
+  .catch(function(e){
+    console.warn('Supabase load failed:',e.message);
+    applyPatients(PATIENTS);
+    hideSheetsStatus();
+    showToast('Erro ao carregar dados do servidor.');
+  });
+}
+
+function applyPatients(pts){
+  filteredPts=[...pts];
+  renderTable(filteredPts);
+  buildCharts();
+  buildAlerts();
+  populateMedFilter();
+}
+
+function showSheetsStatus(msg){
+  var el=document.getElementById('sheets-status');
+  if(!el){el=document.createElement('div');el.id='sheets-status';el.style.cssText='position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:#2C1810;color:#fff;padding:10px 20px;border-radius:20px;font-size:12px;font-family:Inter,sans-serif;z-index:8000;display:flex;align-items:center;gap:8px';el.innerHTML='<span id="sheets-status-msg"></span>';document.body.appendChild(el);}
+  document.getElementById('sheets-status-msg').textContent=msg;
+  el.style.display='flex';
+}
+function hideSheetsStatus(){var el=document.getElementById('sheets-status');if(el)el.style.display='none';}
+
+// ============================================================
+// TABELA DE PACIENTES
+// ============================================================
+function renderTable(data){
+  var tb=document.getElementById('ptbody');if(!tb)return;
+  var rows='';
+  for(var i=0;i<data.length;i++){
+    var p=data[i]; var pid=String(p.id);
+    rows+='<tr class="clickable" onclick="showDetail(\''+pid+'\')">';
+    rows+='<td style="padding:10px 8px"><div style="font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+p.nome+'</div><div style="font-size:10.5px;color:var(--muted);margin-top:1px">'+(p.cidade||'—')+' · '+(p.uf||'—')+'</div></td>';
+    rows+='<td style="font-size:11.5px;padding:10px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(p.med?p.med.split('(')[0].trim():'—')+'</td>';
+    rows+='<td style="font-size:11px;padding:10px 8px;font-family:monospace">'+(p.dose||'—')+'</td>';
+    rows+='<td style="font-size:11px;padding:10px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+(p.indicacao||'')+'">'+(p.indicacao||'—')+'</td>';
+    rows+='<td style="font-size:11px;padding:10px 8px">'+(p.acesso||'—')+'</td>';
+    rows+='<td style="font-size:11px;padding:10px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(p.plano||'—')+'</td>';
+    rows+='<td style="font-size:11px;padding:10px 8px;color:var(--muted)">'+fmtDate(p.ultConsulta)+'</td>';
+    rows+='<td style="padding:10px 8px">'+semRetornoBadge(p.ultConsulta)+'</td>';
+    rows+='<td style="padding:10px 8px">'+statusBadge(p.status)+'</td>';
+    rows+='<td style="padding:6px 8px" onclick="event.stopPropagation()">';
+    rows+='<div style="display:flex;gap:4px">';
+    rows+='<button onclick="event.stopPropagation();openEditModal(\''+pid+'\');" style="padding:5px 9px;border-radius:7px;background:var(--brand-light);color:var(--brand);border:1px solid var(--border2);cursor:pointer;font-size:11px;font-weight:700">✏️ Editar</button>';
+    rows+='<button onclick="event.stopPropagation();confirmDelete(\''+pid+'\');" style="padding:5px 9px;border-radius:7px;background:transparent;color:var(--danger);border:1px solid var(--danger-border);cursor:pointer;font-size:11px;font-weight:700">🗑 Excluir</button>';
+    rows+='</div></td></tr>';
+  }
+  tb.innerHTML=rows;
+  var cnt=document.getElementById('tbl-count');
+  if(cnt)cnt.textContent='Exibindo '+data.length+' de '+PATIENTS.length+' pacientes';
+}
+
+function filterTable(q){filteredPts=PATIENTS.filter(function(p){return p.nome.toLowerCase().includes(q.toLowerCase())||(p.med||'').toLowerCase().includes(q.toLowerCase())||(p.indicacao||'').toLowerCase().includes(q.toLowerCase())||(p.cid||'').toLowerCase().includes(q.toLowerCase())||(p.cidade||'').toLowerCase().includes(q.toLowerCase());});renderTable(filteredPts);}
+function filterBy(field,val){filteredPts=val?PATIENTS.filter(function(p){return p[field]===val;}):[...PATIENTS];renderTable(filteredPts);}
+function populateMedFilter(){var s=document.getElementById('filter-med');if(!s)return;var meds=[...new Set(PATIENTS.map(function(p){return p.med;}).filter(Boolean))].sort();s.innerHTML='<option value="">Todos medic.</option>'+meds.map(function(m){return '<option value="'+m+'">'+m+'</option>';}).join('');}
+
+// ============================================================
+// DETALHE DO PACIENTE
+// ============================================================
+function showDetail(id){
+  var p=PATIENTS.find(function(x){return String(x.id)===String(id);});if(!p)return;
+  var ini=p.nome.split(' ').slice(0,2).map(function(n){return n[0];}).join('');
+  document.getElementById('detalhe-content').innerHTML=
+    '<div class="section-card">'+
+    '<div style="display:flex;align-items:center;gap:14px;padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:14px;flex-wrap:wrap">'+
+    '<div class="avatar" style="width:50px;height:50px;font-size:17px;flex-shrink:0;background:var(--brand)">'+ini+'</div>'+
+    '<div><div style="font-size:18px;font-weight:600">'+p.nome+'</div><div style="font-size:12.5px;color:var(--muted);margin-top:2px">'+(p.sexo||'—')+' · '+(p.idade||'—')+' · '+(p.cidade||'—')+'/'+(p.uf||'—')+' · '+(p.tel||'—')+'</div></div>'+
+    '<div style="margin-left:auto;display:flex;align-items:center;gap:8px">'+statusBadge(p.status)+
+    '<button onclick="openEditModal(\''+p.id+'\')" style="padding:6px 14px;border-radius:8px;background:var(--brand-light);color:var(--brand);border:1px solid var(--border2);cursor:pointer;font-size:12px;font-weight:700;font-family:Inter,sans-serif">✏️ Editar</button></div></div>'+
+    '<div class="detail-grid">'+
+    '<div class="detail-field"><label>Medicamento</label><span>'+(p.med||'—')+'</span></div>'+
+    '<div class="detail-field"><label>Laboratório</label><span>'+(p.lab||'—')+'</span></div>'+
+    '<div class="detail-field"><label>Dose</label><span style="font-family:\'DM Mono\',monospace">'+(p.dose||'—')+'</span></div>'+
+    '<div class="detail-field"><label>Intervalo</label><span>'+(p.intervalo||'—')+'</span></div>'+
+    '<div class="detail-field"><label>Indicação Primária</label><span>'+(p.indicacao||'—')+'</span></div>'+
+    '<div class="detail-field"><label>CID-10</label><span style="font-family:\'DM Mono\',monospace;color:var(--brand);font-weight:700">'+(p.cid||'—')+'</span></div>'+
+    '<div class="detail-field"><label>Tipo de Acesso</label><span>'+(p.acesso||'—')+'</span></div>'+
+    '<div class="detail-field"><label>Plano de Saúde</label><span>'+(p.plano||'—')+'</span></div>'+
+    '<div class="detail-field"><label>Última Consulta</label><span>'+fmtDate(p.ultConsulta)+'</span></div>'+
+    '<div class="detail-field"><label>Sem Retorno</label><span>'+semRetornoText(p.ultConsulta)+'</span></div>'+
+    '</div></div>'+
+    '<div class="section-card"><div class="section-card-title">Dados Clínicos</div>'+
+    '<div class="detail-grid">'+
+    '<div class="detail-field"><label>IgE Total</label><span style="font-family:\'DM Mono\',monospace">'+(p.igeTotal||'—')+'</span></div>'+
+    '<div class="detail-field"><label>Eosinófilos</label><span style="font-family:\'DM Mono\',monospace">'+(p.eosino||'—')+'</span></div>'+
+    '<div class="detail-field"><label>FENO (ppb)</label><span style="font-family:\'DM Mono\',monospace">'+(p.feno||'—')+'</span></div>'+
+    '</div></div>';
+  showPage('detalhe',null);
+}
+
+// ============================================================
+// CHARTS / DASHBOARD
+// ============================================================
+function renderBar(id,data,color){var el=document.getElementById(id);if(!el||!data||!data.length)return;var max=Math.max.apply(null,data.map(function(d){return d.v;}),1);el.innerHTML=data.map(function(d){return '<div class="bar-row"><span class="bar-label" title="'+d.l+'">'+d.l+'</span><div class="bar-track"><div class="bar-fill" style="width:'+Math.round(d.v/max*100)+'%;background:'+color+'"></div></div><span class="bar-count">'+d.v+'</span></div>';}).join('');}
+
+function buildCharts(){
+  var tot=PATIENTS.length;
+  var emUso=PATIENTS.filter(function(p){return p.status==='Em uso';}).length;
+  var analise=PATIENTS.filter(function(p){return p.status==='Em análise'||p.status==='Aguardando liberação';}).length;
+  var semDados=PATIENTS.filter(function(p){return !p.cid||!p.med||!p.igeTotal;}).length;
+  ['k-total','h-total'].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=tot;});
+  ['k-emuso','h-emuso'].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=emUso;});
+  ['k-pend','h-pend'].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=semDados;});
+  var kA=document.getElementById('k-analise');if(kA)kA.textContent=analise;
+  var ac=document.getElementById('alert-count');if(ac)ac.textContent=semDados+PATIENTS.filter(function(p){return daysSince(p.ultConsulta)>90;}).length;
+  var COLORS=['#C4522A','#E8967A','#F5C4AD','#8B3A2A','#D4956A','#7A5C40','#5C8C7A','#B89070'];
+  function countBy(key){var c={};PATIENTS.forEach(function(p){if(p[key]){var k=p[key];c[k]=(c[k]||0)+1;}});return c;}
+  var medCount={};PATIENTS.forEach(function(p){if(p.med){var k=p.med.split('(')[0].trim();medCount[k]=(medCount[k]||0)+1;}});
+  renderBar('ch-med',Object.entries(medCount).sort(function(a,b){return b[1]-a[1];}).slice(0,6).map(function(e){return {l:e[0],v:e[1]};}),'#C4522A');
+  var indCount={};PATIENTS.forEach(function(p){if(p.indicacao){var k=p.indicacao.replace('moderada a grave','').replace('grave','').trim();indCount[k]=(indCount[k]||0)+1;}});
+  renderBar('ch-ind',Object.entries(indCount).sort(function(a,b){return b[1]-a[1];}).slice(0,6).map(function(e){return {l:e[0],v:e[1]};}),'#E8967A');
+  renderBar('ch-status',Object.entries(countBy('status')).sort(function(a,b){return b[1]-a[1];}).map(function(e){return {l:e[0],v:e[1]};}),'#5C8C7A');
+  renderBar('ch-plano',Object.entries(countBy('plano')).sort(function(a,b){return b[1]-a[1];}).slice(0,6).map(function(e){return {l:e[0],v:e[1]};}),'#8B3A2A');
+  renderBar('ch-local',Object.entries(countBy('acesso')).sort(function(a,b){return b[1]-a[1];}).slice(0,6).map(function(e){return {l:e[0],v:e[1]};}),'#D4956A');
+  var acCount=countBy('tipo');var acEntries=Object.entries(acCount);var acTotal=acEntries.reduce(function(s,e){return s+e[1];},0);
+  var svg=document.getElementById('ch-donut');var leg=document.getElementById('ch-acesso-leg');
+  if(svg&&acTotal>0){var offset=0;svg.innerHTML='<circle cx="45" cy="45" r="32" fill="none" stroke="#F7ECE5" stroke-width="14"/>';acEntries.forEach(function(e,i){var pct=e[1]/acTotal;var dash=pct*201.06;svg.innerHTML+='<circle cx="45" cy="45" r="32" fill="none" stroke="'+COLORS[i%COLORS.length]+'" stroke-width="14" stroke-dasharray="'+dash+' '+(201.06-dash)+'" stroke-dashoffset="'+(-offset)+'" transform="rotate(-90 45 45)"/>';offset+=dash;});svg.innerHTML+='<text x="45" y="49" text-anchor="middle" font-size="12" font-weight="600" fill="#2C1810">'+acTotal+'</text>';if(leg)leg.innerHTML=acEntries.map(function(e,i){return '<div class="legend-item"><div class="legend-dot" style="background:'+COLORS[i%COLORS.length]+'"></div><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px">'+e[0]+'</span><span style="margin-left:4px;font-family:\'DM Mono\',monospace;font-weight:700;font-size:11px">'+e[1]+'</span></div>';}).join('');}
+  var now=new Date();var monthLabels=[];var monthCounts=new Array(12).fill(0);
+  for(var i=11;i>=0;i--){var d=new Date(now.getFullYear(),now.getMonth()-i,1);monthLabels.push(d.toLocaleDateString('pt-BR',{month:'short'}).replace('.',''));}
+  PATIENTS.forEach(function(p){if(!p.ultConsulta)return;var d=new Date(p.ultConsulta);if(isNaN(d))return;var mo=Math.floor((now-d)/(1000*60*60*24*30.44));if(mo>=0&&mo<12)monthCounts[11-mo]++;});
+  var maxVal=Math.max.apply(null,monthCounts.concat([1]));
+  var tb=document.getElementById('timeline-bars');var tl=document.getElementById('timeline-labels');
+  if(tb)tb.innerHTML=monthCounts.map(function(v,i){return '<div class="t-bar" style="height:'+Math.round(v/maxVal*100)+'%;background:'+(i===monthCounts.length-1?'#E8967A':'#C4522A')+';min-height:'+(v>0?'22px':'0')+'" title="'+monthLabels[i]+': '+v+' pacientes">'+(v>0?'<span style="position:absolute;bottom:3px;left:0;right:0;text-align:center;font-size:9px;font-weight:700;color:#fff;line-height:1">'+v+'</span>':'')+'</div>';}).join('');
+  if(tl)tl.innerHTML=monthLabels.map(function(m){return '<div class="t-label">'+m+'</div>';}).join('');
+}
+
+function buildAlerts(){
+  var semCid=PATIENTS.filter(function(p){return !p.cid||!p.med;});
+  document.getElementById('alert-sem-cid').innerHTML=semCid.length?semCid.map(function(p){return '<div class="alert-item alert-danger">⚑ <div><b>'+p.nome+'</b> — '+(!p.med?'Medicamento não vinculado':'CID primário ausente')+' <a href="#" onclick="openEditModal(\''+p.id+'\');return false" style="color:var(--brand);font-weight:700">✏️ Editar</a></div></div>';}).join(''):'<div style="color:var(--muted);font-size:12.5px">Nenhuma pendência crítica.</div>';
+  var semRet=PATIENTS.filter(function(p){return daysSince(p.ultConsulta)>90;}).sort(function(a,b){return daysSince(b.ultConsulta)-daysSince(a.ultConsulta);});
+  document.getElementById('alert-sem-retorno').innerHTML=semRet.length?semRet.map(function(p){return '<div class="alert-item alert-warn">⚠ <div><b>'+p.nome+'</b> — Última consulta: '+fmtDate(p.ultConsulta)+' ('+semRetornoText(p.ultConsulta)+' atrás) <a href="#" onclick="openEditModal(\''+p.id+'\');return false" style="color:var(--brand);font-weight:700">✏️ Editar</a></div></div>';}).join(''):'<div style="color:var(--muted);font-size:12.5px">Nenhuma pendência.</div>';
+  var stRev=PATIENTS.filter(function(p){return ['Em análise','Aguardando liberação','Laudo a ser entregue'].includes(p.status);});
+  document.getElementById('alert-status').innerHTML=stRev.length?stRev.map(function(p){return '<div class="alert-item alert-info">ℹ <div><b>'+p.nome+'</b> — '+p.status+' <a href="#" onclick="openEditModal(\''+p.id+'\');return false" style="color:var(--brand);font-weight:700">✏️ Editar</a></div></div>';}).join(''):'<div style="color:var(--muted);font-size:12.5px">Nenhuma pendência.</div>';
+}
+
+// ============================================================
+// FORMULÁRIO — TABS
+// ============================================================
+function switchTab(idx,el){curTab=idx;document.querySelectorAll('.tab-content').forEach(function(t,i){t.classList.toggle('active',i===idx);});document.querySelectorAll('.form-tab').forEach(function(t,i){t.classList.toggle('active',i===idx);});}
+function nextTab(){if(curTab<5)switchTab(curTab+1,document.querySelectorAll('.form-tab')[curTab+1]);}
+function prevTab(){if(curTab>0)switchTab(curTab-1,document.querySelectorAll('.form-tab')[curTab-1]);}
+
+function calcIdade(inp){
+  if(!inp.value)return;
+  var dn=new Date(inp.value),now=new Date();
+  var y=now.getFullYear()-dn.getFullYear();
+  var m=now.getMonth()-dn.getMonth();
+  if(m<0||(m===0&&now.getDate()<dn.getDate()))y--;
+  var months=(now.getFullYear()-dn.getFullYear())*12+(now.getMonth()-dn.getMonth());
+  document.getElementById('f-idade').value=months<12?months+' meses':y===1?'1 ano':y+' anos';
+}
+function calcSemRetorno(inp){var d=daysSince(inp.value);document.getElementById('f-sem-retorno').value=d===null?'':d===0?'Hoje':d===1?'1 dia':d>30?Math.floor(d/30)+' meses':d+' dias';}
+function togglePrestador(sel){var w=document.getElementById('prestador-wrap');if(sel.value==='prestador'){w.style.display='flex';}else{w.style.display='none';document.getElementById('f-prestador').value='';}}
+function autoCid(sel,target){document.getElementById(target).value=sel.options[sel.selectedIndex].dataset.cid||'';}
+
+const DOSES={'Orencia (abatacepte)':['125 mg/mL (SC)'],'Cibinqo (abrocitinibe)':['50 mg comprimido','100 mg comprimido','200 mg comprimido'],'Humira (adalimumabe)':['20 mg/0,2 mL (SC)','40 mg/0,4 mL (SC)','80 mg/0,8 mL (SC)'],'Kineret (anakinra)':['100 mg/0,67 mL (SC)'],'Olumiant (baricitinibe)':['2 mg comprimido','4 mg comprimido'],'Benlysta (belimumabe)':['200 mg/mL (SC)'],'Fasenra (benralizumabe)':['30 mg/mL (SC)'],'Ilaris (canaquinumabe)':['150 mg/mL injetável'],'Cimzia (certolizumabe pegol)':['200 mg/mL (SC)'],'Xeljanz / Xeljanz XR (tofacitinibe)':['5 mg comprimido','10 mg comprimido','11 mg comprimido LP'],'Prolia / Xgeva (denosumabe)':['60 mg/mL (SC)','120 mg/1,7 mL (SC)'],'Dupixent (dupilumabe)':['200 mg/1,14 mL (SC)','300 mg/2 mL (SC)'],'Soliris (eculizumabe)':['300 mg/30 mL (IV)'],'Enbrel (etanercepte)':['25 mg (SC)','50 mg (SC)'],'Jakavi (ruxolitinibe)':['5 mg comprimido','10 mg comprimido','15 mg comprimido','20 mg comprimido'],'Tremfya (guselcumabe)':['100 mg/mL (SC)'],'Remicade (infliximabe)':['100 mg pó liofilizado (IV)'],'Taltz (ixekizumabe)':['80 mg/mL (SC)'],'Ebglyss (lebrikizumabe)':['250 mg/2 mL (SC)'],'Nucala (mepolizumabe)':['40 mg/0,4 mL (SC)','100 mg/mL (SC)'],'Tysabri (natalizumabe)':['300 mg/15 mL (IV)'],'Ocrevus (ocrelizumabe)':['300 mg/10 mL (IV)','600 mg/10 mL (IV)'],'Kesimpta (ofatumumabe)':['20 mg/0,4 mL (SC)'],'Xolair (omalizumabe)':['75 mg/0,5 mL (SC)','150 mg/mL (SC)','300 mg (SC)','450 mg (SC)','600 mg (SC)'],'Ultomiris (ravulizumabe)':['300 mg/30 mL (IV)'],'Cinqair (reslizumabe)':['100 mg/10 mL (IV)'],'Skyrizi (risanquizumabe)':['75 mg/0,83 mL (SC)','150 mg/mL (SC)','600 mg/10 mL (IV)'],'Rituxan / MabThera (rituximabe)':['100 mg/10 mL (IV)','500 mg/50 mL (IV)'],'Evenity (romosozumabe)':['105 mg/1,17 mL (SC — 2 seringas)'],'Kevzara (sarilumabe)':['150 mg/1,14 mL (SC)','200 mg/1,14 mL (SC)'],'Enspryng (satralizumabe)':['120 mg/mL (SC)'],'Cosentyx (secuquinumabe)':['75 mg/0,5 mL (SC)','150 mg/mL (SC)','300 mg/2 mL (SC)'],'Tezspire (tezepelumabe)':['210 mg/1,91 mL (SC)'],'Ilumya (tildraquizumabe)':['100 mg/mL (SC)'],'RoActemra / Actemra (tocilizumabe)':['80 mg/4 mL (IV)','200 mg/10 mL (IV)','400 mg/20 mL (IV)','162 mg/0,9 mL (SC)'],'Litfulo (ritlecitinibe)':['50 mg cápsula'],'Adtralza (traloquinumabe)':['150 mg/mL (SC)'],'Rinvoq (upadacitinibe)':['15 mg comprimido LP','30 mg comprimido LP','45 mg comprimido LP'],'Stelara (ustequinumabe)':['45 mg/0,5 mL (SC)','90 mg/mL (SC)','130 mg/26 mL (IV)'],'Entyvio (vedolizumabe)':['108 mg/0,68 mL (SC)','300 mg pó liofilizado (IV)']};
+function autoFillLab(sel){var opt=sel.options[sel.selectedIndex];document.getElementById('f-lab').value=opt.dataset.lab||'';var opts=DOSES[opt.value]||[];var doseEl=document.getElementById('f-dose');if(opts.length){doseEl.innerHTML='<option value="">Selecionar apresentação</option>'+opts.map(function(d){return '<option>'+d+'</option>';}).join('');}else{doseEl.innerHTML='<option value="">Selecione o medicamento primeiro</option>';}}
+
+// ============================================================
+// SCORES — Opção B (pills)
+// ============================================================
+var scores=[];
+
+function addScore(){
+  var s=document.getElementById('score-select');
+  var v=document.getElementById('score-val');
+  var d=document.getElementById('score-date');
+  if(!s.value||!v.value){showToast('Selecione o score e informe o valor.');return;}
+  scores.push({name:s.value,val:v.value,date:d.value});
+  renderScorePills();
+  s.selectedIndex=0;v.value='';d.value='';
+}
+
+function removeScore(i){scores.splice(i,1);renderScorePills();}
+
+function renderScorePills(){
+  var el=document.getElementById('score-pills');if(!el)return;
+  if(!scores.length){el.innerHTML='';return;}
+  el.innerHTML=scores.map(function(s,i){
+    var dateStr=s.date?new Date(s.date+'T12:00:00').toLocaleDateString('pt-BR'):'';
+    return '<div class="score-pill">'+
+      '<span class="sp-name">'+s.name.split(' (')[0]+'</span>'+
+      '<span class="sp-val">'+s.val+'</span>'+
+      (dateStr?'<span class="sp-date">'+dateStr+'</span>':'')+
+      '<button class="sp-rm" onclick="removeScore('+i+')" title="Remover">✕</button>'+
+      '</div>';
+  }).join('');
+}
+
+// ============================================================
+// SALVAR / EDITAR PACIENTE
+// ============================================================
+window._editingPatientId=null;
+
+function savePaciente(){
+  var nome=document.getElementById('f-nome').value.trim();
+  if(!nome){alert('Por favor, preencha o nome do paciente.');return;}
+  var g=function(id){return (document.getElementById(id)||{value:''}).value||'';};
+  var newPt={
+    id:window._editingPatientId||(PATIENTS.length+1+Math.floor(Math.random()*900)),
+    nome:nome,dn:g('f-dn'),idade:g('f-idade'),sexo:g('f-sexo'),tel:g('f-tel'),
+    email:g('f-email'),mae:g('f-mae'),plano:g('f-plano'),uf:g('f-uf'),cidade:g('f-cidade'),
+    bairro:g('f-bairro'),tipo:g('f-tipo'),acesso:g('f-acesso'),ultConsulta:g('f-ult-consulta'),
+    status:g('f-status')||'Em análise',localApl:g('f-local-aplic'),med:g('f-med'),
+    lab:g('f-lab'),dose:g('f-dose'),posologia:g('f-posologia'),intervalo:g('f-intervalo'),
+    consultor:g('f-consultor'),indicacao:g('f-ind'),cid:g('f-cid'),
+    igeEsp:g('f-ige-esp'),igeTotal:g('f-ige-total'),igeUlt:g('f-ige-data'),
+    eosino:g('f-eosino'),feno:g('f-feno'),
+    percPaciente:g('f-perc-paciente'),avalMedico:g('f-aval-medico'),
+    avalData:g('f-aval-data'),obsPaciente:g('f-obs-paciente'),obsMedico:g('f-obs-medico')
+  };
+  if(window._editingPatientId){
+    var idx=PATIENTS.findIndex(function(x){return String(x.id)===String(window._editingPatientId);});
+    if(idx>-1)PATIENTS[idx]=newPt;
+    sheetsRequest({action:'update',id:window._editingPatientId,data:newPt});
+    window._editingPatientId=null;
+    var sb=document.querySelector('[onclick="savePaciente()"]');if(sb)sb.textContent='✓ Salvar Paciente';
+  }else{
+    PATIENTS.push(newPt);
+    sheetsRequest({action:'add',data:newPt});
+  }
+  filteredPts=[...PATIENTS];
+  clearFormFields();
+  renderTable(PATIENTS);buildCharts();
+  showToast('✅ Paciente "'+nome+'" salvo com sucesso!');
+  showPage('pacientes',document.getElementById('nav-pacientes'));
+}
+
+function clearFormFields(){
+  var form=document.getElementById('page-novo');if(!form)return;
+  form.querySelectorAll('input:not([type="file"]),select,textarea').forEach(function(el){el.value='';});
+  document.querySelectorAll('.field-autofilled').forEach(function(el){el.classList.remove('field-autofilled');});
+  scores.length=0;renderScorePills();
+  var efl=document.getElementById('exam-file-list');if(efl)efl.innerHTML='';
+  var eps=document.getElementById('exam-parse-status');if(eps){eps.style.display='none';eps.innerHTML='';}
+  var notice=document.getElementById('single-filled-notice');if(notice)notice.style.display='none';
+  var badge=document.getElementById('ub-file-badge');if(badge)badge.remove();
+  document.querySelectorAll('.resp-card').forEach(function(c){c.classList.remove('selected','dimmed');});
+}
+
+function openEditModal(id){
+  var p=PATIENTS.find(function(x){return String(x.id)===String(id);});if(!p)return;
+  window._editingPatientId=String(id);
+  showPage('novo',document.getElementById('nav-novo'));
+  setTimeout(function(){
+    var setV=function(fid,val){var el=document.getElementById(fid);if(el&&val!==undefined&&val!==''){el.value=val;if(el.closest)el.closest('.form-group')&&el.closest('.form-group').classList.add('field-autofilled');}};
+    setV('f-nome',p.nome);setV('f-dn',p.dn);setV('f-idade',p.idade);setV('f-sexo',p.sexo);
+    setV('f-tel',p.tel);setV('f-email',p.email);setV('f-mae',p.mae);setV('f-plano',p.plano);
+    setV('f-tipo',p.tipo);setV('f-acesso',p.acesso);setV('f-ult-consulta',p.ultConsulta);
+    setV('f-status',p.status);setV('f-local-aplic',p.localApl);setV('f-dose',p.dose);
+    setV('f-intervalo',p.intervalo);setV('f-posologia',p.posologia);setV('f-consultor',p.consultor);
+    setV('f-cid',p.cid);setV('f-aval-data',p.avalData);
+    setV('f-obs-paciente',p.obsPaciente);setV('f-obs-medico',p.obsMedico);
+    setV('f-ige-total',p.igeTotal);setV('f-eosino',p.eosino);setV('f-feno',p.feno);
+    if(p.med){var medEl=document.getElementById('f-med');if(medEl){var match=Array.from(medEl.options).find(function(o){return o.value===p.med||o.text===p.med;});if(match){medEl.value=match.value;autoFillLab(medEl);}}}
+    if(p.indicacao){var indEl=document.getElementById('f-ind');if(indEl){var mI=Array.from(indEl.options).find(function(o){return o.text===p.indicacao||o.value===p.indicacao;});if(mI)indEl.value=mI.value||mI.text;autoCid(indEl,'f-cid');}}
+    if(p.uf&&typeof loadCidades==='function'){buildUfSelect();var ufEl=document.getElementById('f-uf');if(ufEl)ufEl.value=p.uf;loadCidades(p.uf);setTimeout(function(){var cEl=document.getElementById('f-cidade');if(cEl)cEl.value=p.cidade;if(p.cidade)loadBairros(p.cidade);setTimeout(function(){var bEl=document.getElementById('f-bairro');if(bEl)bEl.value=p.bairro;},100);},100);}
+    if(p.percPaciente){document.querySelectorAll('[data-field="f-perc-paciente"]').forEach(function(c){if(c.dataset.value===p.percPaciente)selectRespCard(c);});}
+    if(p.avalMedico){document.querySelectorAll('[data-field="f-aval-medico"]').forEach(function(c){if(c.dataset.value===p.avalMedico)selectRespCard(c);});}
+    var sb=document.querySelector('[onclick="savePaciente()"]');if(sb)sb.textContent='💾 Salvar alterações';
+    switchTab(0,document.querySelectorAll('.form-tab')[0]);
+  },120);
+}
+
+// ============================================================
+// EXCLUIR PACIENTE
+// ============================================================
+function confirmDelete(id){
+  var p=PATIENTS.find(function(x){return String(x.id)===String(id);});
+  var modal=document.getElementById('delete-modal');
+  if(modal){
+    document.getElementById('delete-patient-name').textContent=p?p.nome:'este paciente';
+    modal.dataset.targetId=String(id);
+    modal.classList.add('open');
+  }
+}
+function closeDeleteModal(){var m=document.getElementById('delete-modal');if(m)m.classList.remove('open');}
+function executeDelete(){
+  var modal=document.getElementById('delete-modal');if(!modal)return;
+  var id=modal.dataset.targetId;if(!id){closeDeleteModal();return;}
+  var idx=PATIENTS.findIndex(function(p){return String(p.id)===String(id);});
+  if(idx>-1){
+    var nome=PATIENTS[idx].nome;var delId=PATIENTS[idx].id;
+    PATIENTS.splice(idx,1);filteredPts=[...PATIENTS];
+    renderTable(filteredPts);buildCharts();
+    showToast('🗑️ Paciente "'+nome+'" excluído.');
+    sheetsRequest({action:'delete',id:delId});
+  }
+  closeDeleteModal();
+}
+
+// ============================================================
+// USUÁRIOS — MODAL EDITAR (CORRIGIDO)
+// ============================================================
+function openUserModal(initials,nome,email,perfil){
+  var m=document.getElementById('user-modal');
+  if(m){
+    m.classList.add('open');
+    var setT=function(id,val){var el=document.getElementById(id);if(el)el.textContent=val;};
+    var setV=function(id,val){var el=document.getElementById(id);if(el)el.value=val;};
+    setT('user-modal-av',initials);
+    setT('user-modal-name',nome);
+    setT('user-modal-email',email);
+    setV('um-nome',nome);
+    setV('um-email',email);
+    setV('um-perfil',perfil);
+    setV('um-status','Ativo');
+    setV('um-senha','');
+    // Guardar qual usuário está editando
+    m.dataset.editInitials=initials;
+  }
+}
+function closeUserModal(){var m=document.getElementById('user-modal');if(m)m.classList.remove('open');}
+
+function saveUser(){
+  var nomeEl=document.getElementById('um-nome');
+  var senhaEl=document.getElementById('um-senha');
+  var nome=nomeEl?nomeEl.value.trim():'';
+  var senha=senhaEl?senhaEl.value.trim():'';
+  if(senha){
+    if(senha.length<4){showToast('❌ A senha deve ter pelo menos 4 caracteres.');return;}
+    // Salvar PIN localmente
+    try{localStorage.setItem('iw_pin',senha);}catch(e){}
+    // Salvar no Supabase
+    var medId=_session&&_session.medico_id;
+    if(medId){
+      fetch(SUPA_URL+'/rest/v1/medicos?id=eq.'+medId,{
+        method:'PATCH',
+        headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+        body:JSON.stringify({senha_pin:senha})
+      }).then(function(r){
+        if(r.ok){
+          showToast('✅ Senha atualizada! Use o novo código no próximo acesso.');
+          // Marcar senha como trocada na sessão
+          try{var sess=JSON.parse(localStorage.getItem('iw_session')||'{}');sess.senha_trocada=true;localStorage.setItem('iw_session',JSON.stringify(sess));}catch(e){}
+          // Remover banner de troca de senha
+          var banner=document.getElementById('banner-troca-senha');if(banner)banner.remove();
+        }else{showToast('✅ Senha salva localmente.');}
+      }).catch(function(){showToast('✅ Senha salva localmente.');});
+    }else{showToast('✅ Senha atualizada localmente.');}
+  }else{
+    showToast('✅ Dados de "'+nome+'" atualizados!');
+  }
+  closeUserModal();
+}
+
+// ============================================================
+// NOVO USUÁRIO
+// ============================================================
+function openNewUserModal(){
+  var modal=document.getElementById('new-user-modal');
+  if(!modal){
+    modal=document.createElement('div');modal.id='new-user-modal';
+    modal.className='modal-overlay';
+    modal.innerHTML='<div class="modal-box" style="max-width:460px"><div class="modal-header"><h3>Novo Usuário</h3><button class="modal-close" onclick="document.getElementById(\'new-user-modal\').classList.remove(\'open\')">✕</button></div><div class="modal-body" style="padding:20px 22px"><div class="form-grid"><div class="form-group full"><label>Nome completo</label><input id="nu-nome" type="text" placeholder="Nome do usuário"></div><div class="form-group"><label>E-mail</label><input id="nu-email" type="email" placeholder="email@exemplo.com"></div><div class="form-group"><label>Perfil</label><select id="nu-perfil"><option>Visualizador</option><option>Admin</option><option>Médico</option><option>Secretária</option></select></div><div class="form-group full" style="padding-top:12px;border-top:1.5px solid var(--border)"><label>Senha de acesso</label><input id="nu-senha" type="password" placeholder="Mínimo 4 caracteres" style="letter-spacing:2px"></div></div><div style="display:flex;gap:8px;margin-top:16px"><button class="btn btn-primary" onclick="saveNewUser()">+ Adicionar</button><button class="btn btn-secondary" onclick="document.getElementById(\'new-user-modal\').classList.remove(\'open\')">Cancelar</button></div></div></div>';
+    modal.onclick=function(e){if(e.target===modal)modal.classList.remove('open');};
+    document.body.appendChild(modal);
+  }
+  ['nu-nome','nu-email','nu-senha'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  modal.classList.add('open');
+}
+
+function saveNewUser(){
+  var nome=(document.getElementById('nu-nome')||{value:''}).value.trim();
+  var email=(document.getElementById('nu-email')||{value:''}).value.trim();
+  var senha=(document.getElementById('nu-senha')||{value:''}).value.trim();
+  if(!nome){showToast('⚠️ Informe o nome.');return;}
+  if(!email){showToast('⚠️ Informe o e-mail.');return;}
+  if(senha.length<4){showToast('⚠️ Senha mínima: 4 caracteres.');return;}
+  try{localStorage.setItem('iw_pin',senha);}catch(e){}
+  var modal=document.getElementById('new-user-modal');if(modal)modal.classList.remove('open');
+  showToast('✅ Usuário "'+nome+'" adicionado!');
+}
+
+// ============================================================
+// PÁGINAS / NAVEGAÇÃO
+// ============================================================
+function showPage(name,navEl){
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  var pg=document.getElementById('page-'+name);if(pg)pg.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
+  if(navEl)navEl.classList.add('active');
+  var titles={dashboard:'Dashboard',pacientes:'Pacientes',novo:'Novo Paciente',detalhe:'Detalhe do Paciente',alertas:'Alertas e Pendências',usuarios:'Gerenciar Usuários'};
+  var ptEl=document.getElementById('page-title-text');if(ptEl)ptEl.textContent=titles[name]||name;
+  if(name==='pacientes')loadFromSheets();
+  if(name==='dashboard')buildCharts();
+  if(name==='alertas')buildAlerts();
+  if(name==='novo'){curTab=0;buildUfSelect();document.querySelectorAll('.tab-content').forEach(function(t,i){t.classList.toggle('active',i===0);});document.querySelectorAll('.form-tab').forEach(function(t,i){t.classList.toggle('active',i===0);});}
+  window.scrollTo(0,0);
+}
+
+function tnav(name,el){
+  document.querySelectorAll('.tnav-item').forEach(function(t){t.classList.remove('active');});
+  if(el)el.classList.add('active');
+  showPage(name,document.getElementById('nav-'+name));
+  closeMoreMenu();
+}
+function toggleMoreMenu(){document.getElementById('more-menu')&&document.getElementById('more-menu').classList.toggle('open');}
+function closeMoreMenu(){document.getElementById('more-menu')&&document.getElementById('more-menu').classList.remove('open');}
+document.addEventListener('click',function(e){if(!e.target.closest('[onclick="toggleMoreMenu()"]')&&!e.target.closest('#more-menu'))closeMoreMenu();});
+
+function showToast(msg){
+  var t=document.getElementById('toast');
+  document.getElementById('toast-msg').textContent=msg;
+  t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},3200);
+}
+
+function doLogout(){
+  if(confirm('Deseja sair do ImunoWay?')){
+    localStorage.removeItem('iw_session');
+    window.location.href='index.html';
+  }
+}
+
+function selectRespCard(el){
+  var field=el.dataset.field;var val=el.dataset.value;
+  var cards=document.querySelectorAll('.resp-card[data-field="'+field+'"]');
+  var inp=document.getElementById(field);
+  if(el.classList.contains('selected')){cards.forEach(function(c){c.classList.remove('selected','dimmed');});if(inp)inp.value='';return;}
+  cards.forEach(function(c){if(c===el){c.classList.add('selected');c.classList.remove('dimmed');}else{c.classList.remove('selected');c.classList.add('dimmed');}});
+  if(inp)inp.value=val;
+}
+
+// ============================================================
+// UF / CIDADES / BAIRROS
+// ============================================================
+const CIDADES_POR_UF={RJ:['Rio de Janeiro','São Gonçalo','Duque de Caxias','Nova Iguaçu','Belford Roxo','Niterói','Campos dos Goytacazes','Petrópolis','Volta Redonda','Magé','Itaboraí','Maricá','Macaé','Angra dos Reis','Cabo Frio','Queimados','Itaguaí','Mesquita','São João de Meriti'],SP:['São Paulo','Guarulhos','Campinas','São Bernardo do Campo','Santo André','Osasco','São José dos Campos','Ribeirão Preto','Sorocaba','Santos','Mogi das Cruzes','Diadema','Jundiaí'],MG:['Belo Horizonte','Uberlândia','Contagem','Juiz de Fora','Montes Claros','Betim','Governador Valadares'],RS:['Porto Alegre','Caxias do Sul','Pelotas','Canoas','Santa Maria'],PR:['Curitiba','Londrina','Maringá','Ponta Grossa','Cascavel'],BA:['Salvador','Feira de Santana','Vitória da Conquista','Camaçari','Juazeiro'],CE:['Fortaleza','Caucaia','Juazeiro do Norte','Maracanaú','Sobral'],PE:['Recife','Jaboatão dos Guararapes','Olinda','Caruaru','Petrolina'],SC:['Florianópolis','Joinville','Blumenau','São José','Criciúma','Chapecó'],GO:['Goiânia','Aparecida de Goiânia','Anápolis'],DF:['Brasília','Ceilândia','Gama','Taguatinga'],AM:['Manaus','Parintins','Itacoatiara'],PA:['Belém','Ananindeua','Santarém'],MT:['Cuiabá','Várzea Grande','Rondonópolis'],MS:['Campo Grande','Dourados','Três Lagoas'],ES:['Vitória','Serra','Vila Velha','Cariacica'],AL:['Maceió','Arapiraca'],RN:['Natal','Mossoró','Parnamirim'],PB:['João Pessoa','Campina Grande'],MA:['São Luís','Imperatriz'],PI:['Teresina','Parnaíba'],SE:['Aracaju'],TO:['Palmas','Araguaína'],AC:['Rio Branco'],AP:['Macapá'],RO:['Porto Velho'],RR:['Boa Vista']};
+const BAIRROS_RIO=['Centro','Copacabana','Ipanema','Leblon','Tijuca','Barra da Tijuca','Botafogo','Flamengo','Laranjeiras','Santa Teresa','Leme','São Cristóvão','Madureira','Penha','Meier','Jacarepaguá','Campo Grande','Recreio dos Bandeirantes','Glória','Catete','Urca','Gávea','Jardim Botânico','Lagoa','São Conrado','Rocinha','Vidigal','Andaraí','Grajaú','Vila Isabel'];
+const BAIRROS_DEFAULT=['Centro','Bairro Central','Zona Norte','Zona Sul','Zona Leste','Zona Oeste'];
+
+function buildUfSelect(){
+  var s=document.getElementById('f-uf');if(!s)return;
+  var ufs=Object.keys(CIDADES_POR_UF).sort();
+  s.innerHTML='<option value="">Selecionar UF</option>'+ufs.map(function(u){return '<option value="'+u+'">'+u+'</option>';}).join('');
+}
+function loadCidades(uf){
+  var s=document.getElementById('f-cidade');if(!uf){s.innerHTML='<option>Selecione a UF primeiro</option>';return;}
+  var cids=(CIDADES_POR_UF[uf]||[]).sort();
+  s.innerHTML='<option value="">Selecionar cidade</option>'+cids.map(function(c){return '<option>'+c+'</option>';}).join('');
+  document.getElementById('f-bairro').innerHTML='<option>Selecione a cidade primeiro</option>';
+}
+function loadBairros(cidade){
+  var s=document.getElementById('f-bairro');if(!cidade){s.innerHTML='<option>Selecione a cidade primeiro</option>';return;}
+  var bairros=cidade==='Rio de Janeiro'?BAIRROS_RIO:BAIRROS_DEFAULT;
+  s.innerHTML='<option value="">Selecionar bairro</option>'+bairros.map(function(b){return '<option>'+b+'</option>';}).join('');
+}
+
+// ============================================================
+// EXPORTAR DADOS
+// ============================================================
+function exportData(fmt){
+  closeMoreMenu();
+  if(!PATIENTS||!PATIENTS.length){showToast('Nenhum dado para exportar.');return;}
+  if(fmt==='xlsx'){
+    if(typeof XLSX==='undefined'){showToast('⚠️ Biblioteca Excel não carregada.');return;}
+    var fields=['nome','dn','idade','sexo','tel','email','plano','uf','cidade','tipo','acesso','ultConsulta','status','med','lab','dose','intervalo','indicacao','cid','igeTotal','eosino','feno'];
+    var labels=['Nome','Data Nasc.','Idade','Sexo','Telefone','Email','Plano','UF','Cidade','Tipo','Acesso','Última Consulta','Status','Medicamento','Laboratório','Dose','Intervalo','Indicação Clínica','CID-10','IgE Total','Eosinófilos','FENO'];
+    var rows=[labels].concat(PATIENTS.map(function(p){return fields.map(function(f){var v=p[f]||'';if((f==='dn'||f==='ultConsulta')&&v)return fmtDate(v);return String(v);});}));
+    var wb=XLSX.utils.book_new();var ws=XLSX.utils.aoa_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb,ws,'Pacientes');XLSX.writeFile(wb,'pacientes_imunoWay.xlsx');
+    showToast('✅ Excel exportado — '+PATIENTS.length+' pacientes');
+  }else if(fmt==='pdf'){
+    var now=new Date().toLocaleDateString('pt-BR');
+    var printHtml='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>ImunoWay</title><style>body{font-family:Arial,sans-serif;font-size:10px}table{width:100%;border-collapse:collapse}th{background:#C4522A;color:#fff;padding:5px 6px;text-align:left}td{padding:5px 6px;border-bottom:0.5px solid #EDD5C8}</style></head><body><h2 style="color:#C4522A">ImunoWay — Listagem de Pacientes</h2><p>Dra. Camila Ventura · '+now+' · '+PATIENTS.length+' pacientes</p><table><thead><tr><th>Paciente</th><th>Última Consulta</th><th>Status</th><th>Medicamento</th><th>Indicação</th><th>Plano</th></tr></thead><tbody>'+PATIENTS.map(function(p){return '<tr><td>'+p.nome+'</td><td>'+fmtDate(p.ultConsulta)+'</td><td>'+p.status+'</td><td>'+(p.med?p.med.split('(')[0].trim():'—')+'</td><td>'+(p.indicacao||'—')+'</td><td>'+(p.plano||'—')+'</td></tr>';}).join('')+'</tbody></table></body></html>';
+    var w=window.open('','_blank','width=900,height=700');if(!w){showToast('⚠️ Pop-up bloqueado.');return;}
+    w.document.write(printHtml);w.document.close();w.focus();setTimeout(function(){w.print();},500);
+    showToast('✅ Janela de impressão aberta — salve como PDF');
+  }else if(fmt==='word'){
+    var now2=new Date().toLocaleDateString('pt-BR');
+    var docHtml='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="UTF-8"><title>ImunoWay</title></head><body style="font-family:Calibri;font-size:10pt"><h1 style="color:#C4522A">ImunoWay — Pacientes</h1><p>Dra. Camila Ventura · '+now2+' · '+PATIENTS.length+' pacientes</p><table border="1" style="width:100%;border-collapse:collapse;font-size:9pt"><tr style="background:#C4522A;color:#fff"><th>Paciente</th><th>Última Consulta</th><th>Status</th><th>Medicamento</th><th>Indicação</th><th>Plano</th></tr>'+PATIENTS.map(function(p){return '<tr><td>'+p.nome+'</td><td>'+fmtDate(p.ultConsulta)+'</td><td>'+p.status+'</td><td>'+(p.med?p.med.split('(')[0].trim():'—')+'</td><td>'+(p.indicacao||'—')+'</td><td>'+(p.plano||'—')+'</td></tr>';}).join('')+'</table></body></html>';
+    var blob=new Blob(['\uFEFF'+docHtml],{type:'application/msword;charset=utf-8'});
+    var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download='pacientes_imunoWay.doc';document.body.appendChild(a);a.click();setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},300);
+    showToast('✅ Word exportado — '+PATIENTS.length+' pacientes');
+  }
+}
+
+function downloadTemplate(){
+  var headers=['Nome','Data Nascimento','Sexo','Telefone','Email','Plano de Saude','UF','Cidade','Bairro','Status','Medicamento','Dose','Intervalo','Indicacao','CID','IgE Total','Eosinofilos','FENO'];
+  var example=['Maria da Silva','15/03/1985','Feminino','(21)99999-0000','maria@email.com','Unimed','RJ','Rio de Janeiro','Tijuca','Em uso','Dupixent (dupilumabe)','300 mg','2 semanas','Dermatite atópica moderada a grave','L20.9','1850','620','42'];
+  var csv='\uFEFF'+headers.join(';')+'\n'+example.join(';');
+  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='modelo_imunoWay.csv';a.click();
+  showToast('✅ Modelo CSV baixado!');closeMoreMenu();
+}
+
+// ============================================================
+// SUPABASE — WRITE (ADD / UPDATE / DELETE)
+// ============================================================
+function sheetsRequest(obj){
+  var medId=_session&&_session.medico_id;if(!medId)return;
+  if(obj.action==='add'){
+    var pt=obj.data;
+    fetch(SUPA_URL+'/rest/v1/pacientes',{method:'POST',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({medico_id:medId,nome:pt.nome||'',dn:pt.dn||'',idade:pt.idade||'',sexo:pt.sexo||'',tel:pt.tel||'',email:pt.email||'',mae:pt.mae||'',plano:pt.plano||'',uf:pt.uf||'',cidade:pt.cidade||'',bairro:pt.bairro||'',tipo:pt.tipo||'',acesso:pt.acesso||'',ult_consulta:pt.ultConsulta||'',status:pt.status||'',local_apl:pt.localApl||'',med:pt.med||'',lab:pt.lab||'',dose:pt.dose||'',intervalo:pt.intervalo||'',posologia:pt.posologia||'',indicacao:pt.indicacao||'',cid:pt.cid||'',ige_total:pt.igeTotal||'',eosino:pt.eosino||'',feno:pt.feno||'',perc_paciente:pt.percPaciente||'',aval_medico:pt.avalMedico||'',aval_data:pt.avalData||'',obs_paciente:pt.obsPaciente||'',obs_medico:pt.obsMedico||''})}).then(function(r){if(!r.ok)r.text().then(function(t){console.warn('Supa add error:',t);});else loadFromSheets();}).catch(function(e){console.warn('Supa add failed:',e);});
+  }else if(obj.action==='delete'){
+    fetch(SUPA_URL+'/rest/v1/pacientes?id=eq.'+obj.id,{method:'DELETE',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Prefer':'return=minimal'}}).catch(function(e){console.warn('Supa delete failed:',e);});
+  }else if(obj.action==='update'){
+    var pt2=obj.data;
+    fetch(SUPA_URL+'/rest/v1/pacientes?id=eq.'+obj.id,{method:'PATCH',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({nome:pt2.nome||'',dn:pt2.dn||'',idade:pt2.idade||'',sexo:pt2.sexo||'',tel:pt2.tel||'',email:pt2.email||'',mae:pt2.mae||'',plano:pt2.plano||'',uf:pt2.uf||'',cidade:pt2.cidade||'',bairro:pt2.bairro||'',tipo:pt2.tipo||'',acesso:pt2.acesso||'',ult_consulta:pt2.ultConsulta||'',status:pt2.status||'',local_apl:pt2.localApl||'',med:pt2.med||'',lab:pt2.lab||'',dose:pt2.dose||'',intervalo:pt2.intervalo||'',posologia:pt2.posologia||'',indicacao:pt2.indicacao||'',cid:pt2.cid||'',ige_total:pt2.igeTotal||'',eosino:pt2.eosino||'',feno:pt2.feno||'',perc_paciente:pt2.percPaciente||'',aval_medico:pt2.avalMedico||'',aval_data:pt2.avalData||'',obs_paciente:pt2.obsPaciente||'',obs_medico:pt2.obsMedico||''})}).catch(function(e){console.warn('Supa update failed:',e);});
+  }
+}
+
+// ============================================================
+// FOTO DO MÉDICO
+// ============================================================
+function _applyDocPhoto(dataUrl){var img=document.getElementById('doc-photo-img');var icon=document.getElementById('doc-photo-icon');if(!dataUrl)return;if(img){img.src=dataUrl;img.style.display='block';}if(icon)icon.style.display='none';}
+function _loadDocPhoto(){var medId=_session&&_session.medico_id;if(!medId)return;fetch(SUPA_URL+'/rest/v1/medicos?id=eq.'+medId+'&select=foto',{headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}}).then(function(r){return r.json();}).then(function(rows){if(rows&&rows[0]&&rows[0].foto)_applyDocPhoto(rows[0].foto);}).catch(function(e){console.warn('Load photo failed:',e);});}
+function _saveDocPhoto(dataUrl){var medId=_session&&_session.medico_id;if(!medId)return;fetch(SUPA_URL+'/rest/v1/medicos?id=eq.'+medId,{method:'PATCH',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({foto:dataUrl})}).then(function(r){if(r.ok)showToast('✅ Foto salva!');}).catch(function(e){console.warn('Save photo failed:',e);});}
+
+// ============================================================
+// UPLOAD DE EXAMES
+// ============================================================
+var examFiles=[];
+function handleExamUpload(inp){Array.from(inp.files).forEach(function(f){examFiles.push(f);});renderExamFiles();inp.value='';}
+function handleDrop(e,type){e.preventDefault();document.getElementById(type==='exams'?'uz-exams':'uz-bulk')&&document.getElementById(type==='exams'?'uz-exams':'uz-bulk').classList.remove('drag-over');if(type==='exams'){Array.from(e.dataTransfer.files).forEach(function(f){examFiles.push(f);});renderExamFiles();}}
+function renderExamFiles(){var list=document.getElementById('exam-file-list');if(!list)return;var icons={pdf:'📄',xlsx:'📊',xls:'📊',csv:'📊',jpg:'🖼️',jpeg:'🖼️',png:'🖼️',doc:'📝',docx:'📝'};var classes={pdf:'fi-pdf',xlsx:'fi-xls',xls:'fi-xls',csv:'fi-xls',jpg:'fi-img',jpeg:'fi-img',png:'fi-img',doc:'fi-doc',docx:'fi-doc'};list.innerHTML=examFiles.map(function(f,i){var ext=f.name.split('.').pop().toLowerCase();var sz=f.size<1048576?(f.size/1024).toFixed(1)+'KB':(f.size/1048576).toFixed(1)+'MB';return '<div class="file-item"><div class="fi-icon '+(classes[ext]||'fi-other')+'">'+(icons[ext]||'📎')+'</div><div class="fi-name">'+f.name+'</div><span class="fi-size">'+sz+'</span><button class="fi-remove" onclick="examFiles.splice('+i+',1);renderExamFiles()">✕</button></div>';}).join('');}
+
+// ============================================================
+// IMPORT DE PACIENTE (arquivo único)
+// ============================================================
+var FIELD_MAP={nome:['nome','name','paciente','titular','patient','nome completo'],dn:['data nascimento','data nasc','dt nasc','nascimento','birth date','data de nascimento'],sexo:['sexo','genero','gênero','gender','sex'],tel:['telefone','celular','fone','whatsapp','phone','contato','tel'],email:['email','e-mail','mail'],mae:['mae','mãe','responsavel','responsável'],plano:['plano de saude','plano saude','plano','operadora','convenio','convênio','plano de saúde'],uf:['uf','estado','sigla'],cidade:['cidade','city','municipio','município'],bairro:['bairro'],status:['status','situacao','situação'],med:['medicamento','medicação','biologico','biológico','farmaco','drug','remedio','imunobiológico','bio'],lab:['laboratorio','laboratório','fabricante','lab'],dose:['dose','dosagem','dose (mg)'],intervalo:['intervalo','frequencia','frequência','periodicidade'],acesso:['tipo de acesso','tipo acesso','acesso'],indicacao:['indicacao clinica','indicação clínica','indicacao','indicação','diagnostico','diagnóstico','doenca','doença'],cid:['cid-10','cid10','cid'],ultConsulta:['ultima consulta','última consulta','data consulta','dt consulta'],igeTotal:['ige total','ige_total','total ige','ige'],eosino:['eosinofilos','eosinófilos','eos'],feno:['feno','no exalado','feno ppb']};
+
+function detectCols(headers){var map={},used=new Set();Object.entries(FIELD_MAP).forEach(function(e){var field=e[0],keys=e[1];var found=headers.find(function(h){if(used.has(h))return false;return keys.some(function(k){return k===h.toLowerCase().trim();});});if(!found)found=headers.find(function(h){if(used.has(h))return false;var hl=h.toLowerCase().trim();return keys.some(function(k){return hl.includes(k);});});if(found){map[field]=found;used.add(found);}});return map;}
+
+function readPatientFile(inp){
+  var file=inp.files&&inp.files[0];if(!file)return;
+  var ext=file.name.split('.').pop().toLowerCase();
+  showPage('novo',document.getElementById('nav-novo'));
+  setTimeout(function(){
+    showSingleOverlay(true);
+    if(ext==='csv'||ext==='txt'){var r=new FileReader();r.onload=function(e){try{_parsePtCSV(e.target.result,file.name);}catch(err){showSingleOverlay(false);showSingleNotice('❌ Erro CSV: '+err.message);}};r.readAsText(file,'UTF-8');}
+    else if(['xlsx','xls','ods'].includes(ext)){if(typeof XLSX==='undefined'){showSingleOverlay(false);showSingleNotice('⚠️ Biblioteca ainda carregando. Aguarde e tente novamente.');return;}var r=new FileReader();r.onload=function(e){try{_parsePtXLSX(e.target.result,file.name);}catch(err){showSingleOverlay(false);showSingleNotice('❌ Erro planilha: '+err.message);}};r.readAsArrayBuffer(file);}
+    else if(ext==='json'){var r=new FileReader();r.onload=function(e){try{_parsePtJSON(e.target.result,file.name);}catch(err){showSingleOverlay(false);showSingleNotice('❌ JSON inválido.');}};r.readAsText(file,'UTF-8');}
+    else if(ext==='pdf'){var r=new FileReader();r.onload=function(e){try{_parsePtPDF(e.target.result,file.name);}catch(err){showSingleOverlay(false);showSingleNotice('❌ Erro PDF.');}};r.readAsArrayBuffer(file);}
+    else if(ext==='doc'||ext==='docx'){var r=new FileReader();r.onload=function(e){try{_parsePtWord(e.target.result,file.name);}catch(err){showSingleOverlay(false);showSingleNotice('❌ Erro Word.');}};r.readAsArrayBuffer(file);}
+    else{showSingleOverlay(false);showSingleNotice('❌ Use XLSX, CSV, PDF, DOC, DOCX ou JSON.');}
+  },100);
+}
+
+function _parsePtCSV(raw,fname){var txt=raw.replace(/^\uFEFF/,'').trim();if(!txt){showSingleOverlay(false);showSingleNotice('❌ Arquivo vazio.');return;}var line1=txt.split('\n')[0];var delim=line1.includes(';')?';':line1.includes('\t')?'\t':',';var res=Papa.parse(txt,{header:true,skipEmptyLines:true,delimiter:delim,dynamicTyping:false});if(!res.data.length){showSingleOverlay(false);showSingleNotice('❌ CSV sem dados.');return;}if(res.data.length>1){_bulkImport(res.data,fname);}else{_fillPatientForm(res.data[0],1,fname);}}
+
+function _parsePtXLSX(buf,fname){var wb=XLSX.read(buf,{type:'array',cellDates:true,raw:false});var ws=wb.Sheets[wb.SheetNames[0]];var data=XLSX.utils.sheet_to_json(ws,{defval:'',raw:false});if(!data.length){showSingleOverlay(false);showSingleNotice('❌ Planilha vazia.');return;}if(data.length>1){_bulkImport(data,fname);}else{_fillPatientForm(data[0],1,fname);}}
+
+function _parsePtJSON(raw,fname){var data=JSON.parse(raw);if(!Array.isArray(data))data=[data];if(!data.length){showSingleOverlay(false);showSingleNotice('❌ JSON vazio.');return;}if(data.length>1){_bulkImport(data,fname);}else{_fillPatientForm(data[0],1,fname);}}
+
+function _fillPatientForm(row,total,fname){
+  var mapping=detectCols(Object.keys(row));var n=Object.keys(mapping).length;
+  if(n===0){showSingleOverlay(false);showSingleNotice('⚠️ Nenhuma coluna reconhecida. Colunas encontradas: '+Object.keys(row).slice(0,5).join(', '));return;}
+  var filled=[];
+  var setF=function(id,key){var col=mapping[key];if(!col)return;var raw=String(row[col]||'').trim();if(!raw)return;var el=document.getElementById(id);if(!el)return;el.value=raw;if(el.closest)el.closest('.form-group')&&el.closest('.form-group').classList.add('field-autofilled');filled.push(id);};
+  setF('f-nome','nome');setF('f-sexo','sexo');setF('f-tel','tel');setF('f-email','email');setF('f-mae','mae');setF('f-plano','plano');setF('f-status','status');setF('f-ige-total','igeTotal');setF('f-eosino','eosino');setF('f-feno','feno');
+  ['dn','ultConsulta'].forEach(function(key){var col=mapping[key];if(!col)return;var raw=String(row[col]||'').trim();if(!raw)return;var d=parseDate(raw);if(!d)return;var idMap={dn:'f-dn',ultConsulta:'f-ult-consulta'};var el=document.getElementById(idMap[key]);if(!el)return;el.value=d;if(el.closest)el.closest('.form-group')&&el.closest('.form-group').classList.add('field-autofilled');filled.push(idMap[key]);if(key==='dn')calcIdade({value:d});if(key==='ultConsulta')calcSemRetorno({value:d});});
+  var ufCol=mapping['uf'];if(ufCol){var rawUf=String(row[ufCol]||'').trim().toUpperCase().slice(0,2);var ufEl=document.getElementById('f-uf');if(ufEl&&rawUf.length===2){buildUfSelect();ufEl.value=rawUf;if(ufEl.value===rawUf){loadCidades(rawUf);}}}
+  var medCol=mapping['med'];if(medCol){var rawMed=String(row[medCol]||'').trim().toLowerCase();var medEl=document.getElementById('f-med');if(medEl&&rawMed){var match=Array.from(medEl.options).find(function(o){return o.text.toLowerCase().includes(rawMed)||rawMed.includes(o.text.split('(')[0].trim().toLowerCase());});if(match){medEl.value=match.value||match.text;autoFillLab(medEl);}}}
+  var indCol=mapping['indicacao'];if(indCol){var rawInd=String(row[indCol]||'').trim();var indEl=document.getElementById('f-ind');if(indEl&&rawInd){var mI=Array.from(indEl.options).find(function(o){return o.text.toLowerCase().includes(rawInd.toLowerCase().slice(0,10));});if(mI){indEl.value=mI.value||mI.text;autoCid(indEl,'f-cid');}}}
+  var cidCol=mapping['cid'];if(cidCol){var rawCid=String(row[cidCol]||'').trim();var cidEl=document.getElementById('f-cid');if(cidEl&&rawCid)cidEl.value=rawCid;}
+  showSingleOverlay(false);
+  showFileBadge(fname,filled.length);
+  showSingleNotice('✅ '+filled.length+' campo'+(filled.length!==1?'s':'')+' preenchido'+(filled.length!==1?'s':'')+' de "'+fname+'". Confira e complete os demais.');
+  switchTab(0,document.querySelectorAll('.form-tab')[0]);
+}
+
+function _bulkImport(rows,fname){
+  var medId=_session&&_session.medico_id;if(!medId){showSingleNotice('❌ Sessão inválida.');return;}
+  var added=0,skipped=0,errors=0;
+  showSingleNotice('⏳ Importando '+rows.length+' paciente(s)...');
+  var promises=rows.map(function(row){
+    var mapping=detectCols(Object.keys(row));if(Object.keys(mapping).length===0){skipped++;return Promise.resolve();}
+    var get=function(key){var col=mapping[key];return col?String(row[col]||'').trim():'';};
+    var nome=get('nome');if(!nome){skipped++;return Promise.resolve();}
+    var normNome=nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
+    var dup=PATIENTS.find(function(p){return p.nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim()===normNome;});
+    if(dup){skipped++;return Promise.resolve();}
+    var dn=parseDate(get('dn'))||get('dn');var uc=parseDate(get('ultConsulta'))||get('ultConsulta');
+    var body={medico_id:medId,nome:nome,dn:dn||'',sexo:get('sexo')||'',tel:get('tel')||'',email:get('email')||'',mae:get('mae')||'',plano:get('plano')||'',uf:get('uf')||'',cidade:get('cidade')||'',bairro:get('bairro')||'',tipo:get('tipo')||'',acesso:get('acesso')||'',ult_consulta:uc||'',status:get('status')||'Em análise',local_apl:'',med:get('med')||'',lab:get('lab')||'',dose:get('dose')||'',intervalo:get('intervalo')||'',posologia:'',indicacao:get('indicacao')||'',cid:get('cid')||'',ige_total:get('igeTotal')||'',eosino:get('eosino')||'',feno:get('feno')||''};
+    return fetch(SUPA_URL+'/rest/v1/pacientes',{method:'POST',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(body)}).then(function(r){if(r.ok)added++;else errors++;}).catch(function(){errors++;});
+  });
+  Promise.all(promises).then(function(){
+    loadFromSheets();
+    var msg='✅ Importação concluída: '+added+' adicionado(s)';
+    if(skipped>0)msg+=', '+skipped+' ignorado(s)';
+    if(errors>0)msg+=', '+errors+' erro(s)';
+    showSingleNotice(msg);
+    showPage('pacientes',document.getElementById('nav-pacientes'));
+  });
+}
+
+function showFileBadge(fname,n){var banner=document.getElementById('ub-main');if(!banner)return;var badge=document.getElementById('ub-file-badge');if(!badge){badge=document.createElement('div');badge.id='ub-file-badge';badge.className='ub-file-badge';banner.parentNode.insertBefore(badge,banner.nextSibling);}var ext=fname.split('.').pop().toUpperCase();badge.innerHTML='<span style="background:var(--brand-light);color:var(--brand);padding:3px 9px;border-radius:5px;font-size:11px;font-weight:700">'+ext+'</span><span style="font-size:13px;font-weight:600;color:var(--text);flex:1">'+fname+'</span><span style="background:var(--success-bg);color:var(--success);padding:2px 9px;border-radius:5px;font-size:11px;font-weight:700">'+n+' campos</span><button onclick="this.parentNode.remove()" style="background:none;border:none;color:var(--small);cursor:pointer;font-size:16px">✕</button>';}
+function showSingleOverlay(show){var el=document.getElementById('single-parse-overlay');if(el)el.classList.toggle('show',show);}
+function showSingleNotice(msg){
+  var el=document.getElementById('single-filled-notice');if(!el)return;
+  var isOk=msg.startsWith('✅'),isWarn=msg.startsWith('⚠️');
+  var color=isOk?'var(--success)':isWarn?'var(--warn)':'var(--danger)';
+  var bg=isOk?'var(--success-bg)':isWarn?'var(--warn-bg)':'var(--danger-bg)';
+  var bdr=isOk?'var(--success-border)':isWarn?'var(--warn-border)':'var(--danger-border)';
+  el.style.cssText='display:flex;align-items:flex-start;gap:10px;border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:13px;font-weight:600;color:'+color+';background:'+bg+';border:1.5px solid '+bdr;
+  var txt=document.getElementById('single-filled-msg');if(txt)txt.textContent=msg;
+  el.querySelector('button').style.color=color;
+}
+function clearFill(){document.querySelectorAll('.field-autofilled').forEach(function(el){var inp=el.querySelector('input,select');if(inp)inp.value='';el.classList.remove('field-autofilled');});var n=document.getElementById('single-filled-notice');if(n)n.style.display='none';var b=document.getElementById('ub-file-badge');if(b)b.remove();}
+
+// ============================================================
+// PDF.js E WORD IMPORT
+// ============================================================
+if(typeof pdfjsLib!=='undefined'){pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';}
+
+async function _parsePtPDF(arrayBuffer,fname){
+  showSingleOverlay(true);
+  try{if(typeof pdfjsLib==='undefined')throw new Error('PDF.js não carregado.');var pdf=await pdfjsLib.getDocument({data:arrayBuffer}).promise;var text='';for(var i=1;i<=pdf.numPages;i++){var page=await pdf.getPage(i);var tc=await page.getTextContent();text+=tc.items.map(function(it){return it.str;}).join(' ')+' ';}showSingleOverlay(false);var pt=_extractPatientFromText(text);if(pt&&pt.nome){_fillPatientForm(pt,1,fname);}else{showSingleNotice('PDF lido. Preencha os campos manualmente.');}}
+  catch(err){showSingleOverlay(false);showSingleNotice('Erro ao ler PDF: '+err.message);}
+}
+
+async function _parsePtWord(arrayBuffer,fname){
+  showSingleOverlay(true);
+  try{if(typeof mammoth==='undefined')throw new Error('Mammoth não carregado.');var result=await mammoth.extractRawText({arrayBuffer:arrayBuffer});showSingleOverlay(false);var pt=_extractPatientFromText(result.value);if(pt&&pt.nome){_fillPatientForm(pt,1,fname);}else{showSingleNotice('Word lido. Preencha os campos manualmente.');}}
+  catch(err){showSingleOverlay(false);showSingleNotice('Erro ao ler Word: '+err.message);}
+}
+
+function _extractPatientFromText(text){
+  var pt={};
+  function findVal(labels){for(var i=0;i<labels.length;i++){var idx=text.toLowerCase().indexOf(labels[i].toLowerCase());if(idx>-1){var after=text.substring(idx+labels[i].length+1,idx+labels[i].length+61).replace(/^[:\s]+/,'').split(/[\n\r,;]/)[0].trim();if(after.length>1)return after;}}return '';}
+  var lines=text.split('\n').map(function(l){return l.trim();}).filter(Boolean);
+  pt.nome=findVal(['nome','paciente'])||(lines.find(function(l){return l.length>5&&l.length<80&&/^[A-ZÀ-Ü]/.test(l)&&l.indexOf(' ')>1;})||'');
+  var dnMatch=text.match(/(\d{2}[\/\-\.]\d{2}[\/\-\.]\d{2,4})/);pt.dn=findVal(['data de nascimento','nascimento','nasc'])||(dnMatch?dnMatch[1]:'');
+  if(/feminino|fem/i.test(text))pt.sexo='F';else if(/masculino|masc/i.test(text))pt.sexo='M';
+  var telMatch=text.match(/[(]?\d{2}[)]?[\s\-]?\d{4,5}[\s\-]?\d{4}/);pt.tel=findVal(['telefone','celular'])||(telMatch?telMatch[0]:'');
+  var emMatch=text.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+[.][a-z]{2,}/i);pt.email=emMatch?emMatch[0]:'';
+  pt.plano=findVal(['plano','convenio','convênio']);
+  var meds=['Dupixent','Nucala','Tezspire','Xolair','Fasenra'];for(var i=0;i<meds.length;i++){if(text.toLowerCase().indexOf(meds[i].toLowerCase())>-1){pt.med=meds[i];break;}}
+  var doseMatch=text.match(/(\d+)\s*mg/i);pt.dose=doseMatch?doseMatch[1]+'mg':'';
+  if(/em uso/i.test(text))pt.status='Em uso';else if(/analise|análise/i.test(text))pt.status='Em análise';
+  pt.cidade=findVal(['cidade','municipio','município']);pt.uf=findVal(['uf','estado']);
+  pt.indicacao=findVal(['indicacao','indicação','diagnostico','diagnóstico']);
+  return pt;
+}
+
+function closeModal(){document.getElementById('file-modal')&&document.getElementById('file-modal').classList.remove('open');var b=document.getElementById('modal-body-content');if(b)b.innerHTML='';}
+
+// ============================================================
+// PIN SYSTEM
+// ============================================================
+var _pinBuf='';var _pinCorrect='38701';
+function _getPin(){try{return localStorage.getItem('iw_pin')||_pinCorrect;}catch(e){return _pinCorrect;}}
+function pk(d){if(_pinBuf.length>=5)return;_pinBuf+=d;_updateDots();if(_pinBuf.length===5)setTimeout(_checkPin,120);}
+function pkDel(){_pinBuf=_pinBuf.slice(0,-1);_updateDots();}
+function pkClear(){_pinBuf='';_updateDots();_setMsg('');}
+function pkGoogle(){_setMsg('Login com Google disponível na versão cloud.');}
+function _updateDots(){for(var i=0;i<5;i++){var d=document.getElementById('pd'+i);if(!d)return;d.className='pd'+(i<_pinBuf.length?' on':'');}}
+function _checkPin(){
+  if(_pinBuf===_getPin()){
+    _setDotsColor('#1D9E75');
+    try{sessionStorage.setItem('iw_ok_v3','1');}catch(e){}
+    setTimeout(function(){
+      var lp=document.getElementById('login-page');if(lp)lp.style.display='none';
+      var ma=document.getElementById('main-app');if(ma)ma.style.display='flex';
+      setTimeout(function(){loadFromSheets();document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});var dp=document.getElementById('page-dashboard');if(dp)dp.classList.add('active');document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});var dn=document.getElementById('nav-dashboard');if(dn)dn.classList.add('active');},50);
+    },700);
+  }else{
+    _setDotsColor('#E24B4A');var row=document.getElementById('pdr');if(row){row.classList.add('sw');setTimeout(function(){row.classList.remove('sw');},500);}
+    _setMsg('Código incorreto. Tente novamente.');
+    setTimeout(function(){_pinBuf='';for(var i=0;i<5;i++){var d=document.getElementById('pd'+i);if(d){d.className='pd';d.removeAttribute('style');}}_setMsg('');},800);
+  }
+}
+function _setDotsColor(c){for(var i=0;i<5;i++){var d=document.getElementById('pd'+i);if(d){d.style.background=c;d.style.borderColor=c;}}}
+function _setMsg(m){var el=document.getElementById('pmsg');if(el)el.textContent=m;}
+
+document.addEventListener('keydown',function(e){var lp=document.getElementById('login-page');if(!lp||lp.style.display==='none')return;if(e.key>='0'&&e.key<='9')pk(e.key);else if(e.key==='Backspace')pkDel();else if(e.key==='Escape')pkClear();});
+
+// Skip PIN se sessão válida
+(function(){
+  try{
+    var sess=JSON.parse(localStorage.getItem('iw_session'));
+    var validSession=sess&&sess.medico_id&&sess.expires>Date.now();
+    var legacyOk=sessionStorage.getItem('iw_ok_v3')==='1';
+    if(validSession||legacyOk){
+      var lp=document.getElementById('login-page');if(lp)lp.style.display='none';
+      var ma=document.getElementById('main-app');if(ma){ma.style.display='flex';setTimeout(function(){loadFromSheets();},100);}
+    }
+  }catch(e){}
+})();
+
+// ============================================================
+// PERSONALIZAÇÃO POR SESSÃO
+// ============================================================
+(function applyPersonalization(){
+  if(!_session)return;
+  var root=document.documentElement;
+  if(_session.cor_brand)root.style.setProperty('--brand',_session.cor_brand);
+  if(_session.cor_navy)root.style.setProperty('--navy',_session.cor_navy);
+  if(_session.cor_accent)root.style.setProperty('--accent',_session.cor_accent);
+  if(_session.cor_bg)root.style.setProperty('--bg',_session.cor_bg);
+  document.querySelectorAll('.ds-name').forEach(function(el){el.textContent=_session.nome||el.textContent;});
+  document.querySelectorAll('.ds-spec').forEach(function(el){el.textContent=_session.especialidade||el.textContent;});
+})();
+
+// ============================================================
+// FOTO — EVENTO DE UPLOAD
+// ============================================================
+document.addEventListener('DOMContentLoaded',function(){
+  _loadDocPhoto();
+  var input=document.getElementById('doc-photo-input');if(!input)return;
+  input.addEventListener('change',function(e){
+    var file=e.target.files&&e.target.files[0];if(!file)return;
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      var img=new Image();
+      img.onload=function(){var canvas=document.createElement('canvas');var maxW=300,maxH=300,w=img.width,h=img.height;if(w>maxW){h=Math.round(h*maxW/w);w=maxW;}if(h>maxH){w=Math.round(w*maxH/h);h=maxH;}canvas.width=w;canvas.height=h;canvas.getContext('2d').drawImage(img,0,0,w,h);var dataUrl=canvas.toDataURL('image/jpeg',0.8);_applyDocPhoto(dataUrl);_saveDocPhoto(dataUrl);};
+      img.src=ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+});
+
+// ============================================================
+// BANNER DE TROCA DE SENHA — 1º ACESSO
+// ============================================================
+(function checkPrimeiroAcesso(){
+  try{
+    var sess=JSON.parse(localStorage.getItem('iw_session')||'{}');
+    if(sess&&sess.medico_id&&!sess.senha_trocada){
+      document.addEventListener('DOMContentLoaded',function(){
+        setTimeout(function(){
+          if(document.getElementById('banner-troca-senha'))return;
+          var banner=document.createElement('div');
+          banner.id='banner-troca-senha';
+          banner.innerHTML=
+            '<span style="font-size:20px">🔐</span>'+
+            '<span style="flex:1;line-height:1.4">Recomendamos que você <strong style="color:#E8967A">troque sua senha de acesso</strong> para personalizar o sistema.</span>'+
+            '<button onclick="showPage(\'usuarios\',document.getElementById(\'nav-usuarios\'));setTimeout(function(){openUserModal(\'CV\',\'Dra. Camila Ventura\',\'camila@imunoWay.med.br\',\'Admin\');},300);document.getElementById(\'banner-troca-senha\').remove()" style="background:#C4522A;color:#fff;border:none;border-radius:9px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap;flex-shrink:0">Trocar agora</button>'+
+            '<button onclick="this.parentNode.remove()" style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.6);border:none;border-radius:7px;padding:6px 10px;cursor:pointer;font-size:16px;flex-shrink:0">✕</button>';
+          document.body.appendChild(banner);
+          setTimeout(function(){var b=document.getElementById('banner-troca-senha');if(b)b.remove();},12000);
+        },1500);
+      });
+    }
+  }catch(e){}
+})();
+
+// ============================================================
+// BACKUP SEMANAL
+// ============================================================
+function _checkWeeklyBackup(){
+  try{var now=new Date();var isTuesday=now.getDay()===2;var isBackupHour=now.getHours()===8;var last=localStorage.getItem('iw_last_backup');var lastDate=last?new Date(last):null;var alreadySent=lastDate&&lastDate.getFullYear()===now.getFullYear()&&lastDate.getMonth()===now.getMonth()&&lastDate.getDate()===now.getDate();if(isTuesday&&isBackupHour&&!alreadySent)_sendBackupEmail();}catch(e){}
+}
+function _sendBackupEmail(){
+  if(!SHEETS_URL||!PATIENTS.length)return;
+  var medNome=(_session&&_session.nome)||'Médico';
+  var payload={action:'backup_email',emails:BACKUP_EMAILS,medico_nome:medNome,data:new Date().toLocaleDateString('pt-BR'),pacientes:PATIENTS};
+  fetch(SHEETS_URL+'?dados='+encodeURIComponent(JSON.stringify(payload))).then(function(r){if(r.ok){localStorage.setItem('iw_last_backup',new Date().toISOString());showToast('✅ Backup semanal enviado.');}}).catch(function(e){console.warn('Backup failed:',e);});
+}
+document.addEventListener('DOMContentLoaded',function(){setTimeout(_checkWeeklyBackup,5000);setInterval(_checkWeeklyBackup,60*60*1000);});
+</script>
+</body>
+</html>
