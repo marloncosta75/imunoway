@@ -1365,7 +1365,7 @@ function renderTable(data){
   for(var i=0;i<data.length;i++){
     var p=data[i];
     var pid=p.id;
-    rows+='<tr class="clickable" onclick="showDetail('+pid+')">';
+    rows+='<tr class="clickable" onclick="showDetail(\''+pid+'\')">';
     rows+='<td style="padding:10px 8px;overflow:hidden"><div style="font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)">'+p.nome+'</div>';
     rows+='<div style="font-size:10.5px;color:var(--muted);margin-top:1px">'+(p.cidade||'—')+' · '+(p.uf||'—')+'</div></td>';
     rows+='<td style="font-size:11.5px;padding:10px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(p.med?p.med.split('(')[0].trim():'—')+'</td>';
@@ -1377,8 +1377,8 @@ function renderTable(data){
     rows+='<td style="font-size:11px;padding:10px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(p.plano||'—')+'</td>';
     rows+='<td style="padding:6px 8px" onclick="event.stopPropagation()">';
     rows+='<div style="display:flex;gap:4px">';
-    rows+='<button onclick="window.openEditModal('+pid+')" style="padding:5px 9px;border-radius:7px;background:var(--brand-light);color:var(--brand);border:1px solid var(--border2);cursor:pointer;font-size:11px;font-weight:700">✏️ Editar</button>';
-    rows+='<button onclick="window.confirmDelete('+pid+')" style="padding:5px 9px;border-radius:7px;background:transparent;color:var(--danger);border:1px solid var(--danger-border);cursor:pointer;font-size:11px;font-weight:700">🗑 Excluir</button>';
+    rows+='<button onclick="window.openEditModal(\''+pid+'\')" style="padding:5px 9px;border-radius:7px;background:var(--brand-light);color:var(--brand);border:1px solid var(--border2);cursor:pointer;font-size:11px;font-weight:700">✏️ Editar</button>';
+    rows+='<button onclick="window.confirmDelete(\''+pid+'\')" style="padding:5px 9px;border-radius:7px;background:transparent;color:var(--danger);border:1px solid var(--danger-border);cursor:pointer;font-size:11px;font-weight:700">🗑 Excluir</button>';
     rows+='</div></td></tr>';
   }
   tb.innerHTML=rows;
@@ -1421,7 +1421,7 @@ function showDetail(id){
         </div>
         <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
           ${statusBadge(p.status)}
-          <button onclick="window.openEditModal(${p.id})" style="padding:6px 14px;border-radius:8px;background:var(--brand-light);color:var(--brand);border:1px solid var(--border2);cursor:pointer;font-size:12px;font-weight:700;font-family:Inter,sans-serif">&#x270F;&#xFE0F; Editar</button>
+          <button onclick="window.openEditModal('${p.id}')" style="padding:6px 14px;border-radius:8px;background:var(--brand-light);color:var(--brand);border:1px solid var(--border2);cursor:pointer;font-size:12px;font-weight:700;font-family:Inter,sans-serif">&#x270F;&#xFE0F; Editar</button>
         </div>
       </div>
       <div class="detail-grid">
@@ -1560,17 +1560,17 @@ function buildCharts(){
 function buildAlerts(){
   const semCid=PATIENTS.filter(p=>!p.cid||!p.med);
   document.getElementById('alert-sem-cid').innerHTML=semCid.length?
-    semCid.map(p=>`<div class="alert-item alert-danger">⚑ <div><b>${p.nome}</b> — ${!p.med?'Medicamento não vinculado':!p.cid?'CID primário ausente':''} <a href="#" onclick="showDetail(${p.id});return false" style="color:var(--brand);font-weight:700">Ver →</a> <a href="#" onclick="window.openEditModal(${p.id});return false" style="color:var(--brand);font-weight:700;margin-left:8px">✏️ Editar</a></div></div>`).join(''):
+    semCid.map(p=>`<div class="alert-item alert-danger">⚑ <div><b>${p.nome}</b> — ${!p.med?'Medicamento não vinculado':!p.cid?'CID primário ausente':''} <a href="#" onclick="showDetail('${p.id}');return false" style="color:var(--brand);font-weight:700">Ver →</a> <a href="#" onclick="window.openEditModal('${p.id}');return false" style="color:var(--brand);font-weight:700;margin-left:8px">✏️ Editar</a></div></div>`).join(''):
     '<div style="color:var(--muted);font-size:12.5px">Nenhuma pendência crítica.</div>';
 
   const semRet=PATIENTS.filter(p=>daysSince(p.ultConsulta)>90).sort((a,b)=>daysSince(b.ultConsulta)-daysSince(a.ultConsulta));
   document.getElementById('alert-sem-retorno').innerHTML=semRet.length?
-    semRet.map(p=>`<div class="alert-item alert-warn">⚠ <div><b>${p.nome}</b> — Última consulta: ${fmtDate(p.ultConsulta)} (${semRetornoText(p.ultConsulta)} atrás) <a href="#" onclick="showDetail(${p.id});return false" style="color:var(--brand);font-weight:700">Ver →</a> <a href="#" onclick="window.openEditModal(${p.id});return false" style="color:var(--brand);font-weight:700;margin-left:8px">✏️ Editar</a></div></div>`).join(''):
+    semRet.map(p=>`<div class="alert-item alert-warn">⚠ <div><b>${p.nome}</b> — Última consulta: ${fmtDate(p.ultConsulta)} (${semRetornoText(p.ultConsulta)} atrás) <a href="#" onclick="showDetail('${p.id}');return false" style="color:var(--brand);font-weight:700">Ver →</a> <a href="#" onclick="window.openEditModal('${p.id}');return false" style="color:var(--brand);font-weight:700;margin-left:8px">✏️ Editar</a></div></div>`).join(''):
     '<div style="color:var(--muted);font-size:12.5px">Nenhuma pendência.</div>';
 
   const stRev=PATIENTS.filter(p=>['Em análise','Aguardando liberação','Laudo a ser entregue'].includes(p.status));
   document.getElementById('alert-status').innerHTML=stRev.length?
-    stRev.map(p=>`<div class="alert-item alert-info">ℹ <div><b>${p.nome}</b> — ${p.status} <a href="#" onclick="showDetail(${p.id});return false" style="color:var(--brand);font-weight:700">Ver →</a> <a href="#" onclick="window.openEditModal(${p.id});return false" style="color:var(--brand);font-weight:700;margin-left:8px">✏️ Editar</a></div></div>`).join(''):
+    stRev.map(p=>`<div class="alert-item alert-info">ℹ <div><b>${p.nome}</b> — ${p.status} <a href="#" onclick="showDetail('${p.id}');return false" style="color:var(--brand);font-weight:700">Ver →</a> <a href="#" onclick="window.openEditModal('${p.id}');return false" style="color:var(--brand);font-weight:700;margin-left:8px">✏️ Editar</a></div></div>`).join(''):
     '<div style="color:var(--muted);font-size:12.5px">Nenhuma pendência.</div>';
 }
 
@@ -2736,7 +2736,7 @@ function confirmDelete(id){
 function executeDelete(){
   const modal = document.getElementById('delete-modal');
   if(!modal) return;
-  const id = parseInt(modal.dataset.targetId || '0');
+  const id = modal.dataset.targetId || '';
   if(!id){ closeDeleteModal(); return; }
   const idx = PATIENTS.findIndex(p=>p.id===id);
   if(idx > -1){
@@ -2942,7 +2942,7 @@ renderTable = function(data){
   document.querySelectorAll('.del-pt-btn').forEach(function(btn){
     btn.onclick = function(e){
       e.stopPropagation();
-      confirmDelete(parseInt(btn.dataset.id));
+      confirmDelete(btn.dataset.id);
     };
   });
 };
