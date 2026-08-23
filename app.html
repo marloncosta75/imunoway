@@ -13,7 +13,7 @@
 <script>
 const SUPA_URL = 'https://nekqsuvjzwzprcsozwnr.supabase.co';
 const SUPA_KEY = 'sb_publishable_cItO3Ib9OUn1SibZYsykgA_4RiXOLB8';
-const supabase = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+const supabaseClient = window.supabase.createClient(SUPA_URL, SUPA_KEY);
 
 var _session;
 try { _session = JSON.parse(sessionStorage.getItem('iw_medico')); } catch(e){}
@@ -24,7 +24,7 @@ if(_session){
   document.documentElement.style.setProperty('--brand', _session.cor_brand || '#C4522A');
   document.documentElement.style.setProperty('--navy',  _session.cor_navy  || '#2C1810');
 }
-supabase.auth.getSession().then(function(res){
+supabaseClient.auth.getSession().then(function(res){
   if(!res.data.session){
     sessionStorage.removeItem('iw_medico');
     window.location.href = 'index.html';
@@ -1249,7 +1249,7 @@ function loadFromSheets(){
   var medId = _session && _session.medico_id;
   if(!medId){ hideSheetsStatus(); applyPatients(PATIENTS); return; }
 
-  supabase.from('pacientes').select('*').eq('medico_id', medId).order('nome', {ascending:true})
+  supabaseClient.from('pacientes').select('*').eq('medico_id', medId).order('nome', {ascending:true})
     .then(function(res){
       if(res.error){ throw res.error; }
       var rows = res.data;
@@ -1930,7 +1930,7 @@ function _doLogin_OLD(){
 }
 function doLogout(){
   if(confirm('Deseja sair do ImunoWay?')){
-    supabase.auth.signOut().then(function(){
+    supabaseClient.auth.signOut().then(function(){
       sessionStorage.removeItem('iw_medico');
       window.location.href = 'index.html';
     });
@@ -3105,19 +3105,19 @@ function sheetsRequest(obj){
 
   if(obj.action === 'add'){
     var pt = obj.data || obj;
-    supabase.from('pacientes').insert(mapToDb(pt)).then(function(res){
+    supabaseClient.from('pacientes').insert(mapToDb(pt)).then(function(res){
       if(res.error) console.warn('Supa add error:', res.error.message);
       else loadFromSheets();
     });
   }
   else if(obj.action === 'delete'){
-    supabase.from('pacientes').delete().eq('id', obj.id).then(function(res){
+    supabaseClient.from('pacientes').delete().eq('id', obj.id).then(function(res){
       if(res.error) console.warn('Supa delete error:', res.error.message);
     });
   }
   else if(obj.action === 'update'){
     var pt2 = obj.data;
-    supabase.from('pacientes').update(mapToDb(pt2)).eq('id', obj.id).then(function(res){
+    supabaseClient.from('pacientes').update(mapToDb(pt2)).eq('id', obj.id).then(function(res){
       if(res.error) console.warn('Supa update error:', res.error.message);
     });
   }

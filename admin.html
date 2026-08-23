@@ -176,7 +176,7 @@ tr:hover td{background:#fafafa}
 <script>
 const SUPA_URL = 'https://nekqsuvjzwzprcsozwnr.supabase.co';
 const SUPA_KEY = 'sb_publishable_cItO3Ib9OUn1SibZYsykgA_4RiXOLB8';
-const supabase = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+const supabaseClient = window.supabase.createClient(SUPA_URL, SUPA_KEY);
 
 var _session, medicosData = [], _editingId = null;
 
@@ -193,12 +193,12 @@ var PALETAS = [
 
 // ── Auth check ──────────────────────────────────────────────
 (async function init(){
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await supabaseClient.auth.getSession();
   if(!session){ window.location.href = 'index.html'; return; }
 
-  const { data: medico, error } = await supabase.from('medicos').select('*').eq('user_id', session.user.id).single();
+  const { data: medico, error } = await supabaseClient.from('medicos').select('*').eq('user_id', session.user.id).single();
   if(error || !medico || !medico.is_admin){
-    await supabase.auth.signOut();
+    await supabaseClient.auth.signOut();
     window.location.href = 'index.html';
     return;
   }
@@ -211,11 +211,11 @@ var PALETAS = [
 })();
 
 function logout(){
-  supabase.auth.signOut().then(function(){ window.location.href='index.html'; });
+  supabaseClient.auth.signOut().then(function(){ window.location.href='index.html'; });
 }
 
 async function loadMedicos(){
-  const { data, error } = await supabase.from('medicos').select('*, pacientes(count)').order('criado_em', {ascending:false});
+  const { data, error } = await supabaseClient.from('medicos').select('*, pacientes(count)').order('criado_em', {ascending:false});
   if(error){
     document.getElementById('medicos-tbody').innerHTML =
       '<tr><td colspan="7" style="text-align:center;color:#A32D2D;padding:24px">Erro: '+error.message+'</td></tr>';
@@ -387,9 +387,9 @@ async function saveCliente(){
 
   var res;
   if(_editingId){
-    res = await supabase.from('medicos').update(body).eq('id', _editingId);
+    res = await supabaseClient.from('medicos').update(body).eq('id', _editingId);
   } else {
-    res = await supabase.from('medicos').insert(body);
+    res = await supabaseClient.from('medicos').insert(body);
   }
 
   if(res.error){
@@ -405,7 +405,7 @@ async function saveCliente(){
 
 async function toggleAtivo(id, ativo){
   if(!confirm(ativo?'Desativar este cliente?':'Ativar este cliente?')) return;
-  await supabase.from('medicos').update({ativo: !ativo}).eq('id', id);
+  await supabaseClient.from('medicos').update({ativo: !ativo}).eq('id', id);
   loadMedicos();
 }
 </script>

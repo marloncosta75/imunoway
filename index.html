@@ -103,11 +103,11 @@ body{
 <script>
 const SUPA_URL = 'https://nekqsuvjzwzprcsozwnr.supabase.co';
 const SUPA_KEY = 'sb_publishable_cItO3Ib9OUn1SibZYsykgA_4RiXOLB8';
-const supabase = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+const supabaseClient = window.supabase.createClient(SUPA_URL, SUPA_KEY);
 
 // If already logged in, redirect
 (async function checkSession(){
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await supabaseClient.auth.getSession();
   if(session){
     await routeAfterLogin(session.user.id);
   }
@@ -135,7 +135,7 @@ async function doLogin(){
   btn.disabled = true;
   load.style.display = 'block';
 
-  const { data, error } = await supabase.auth.signInWithPassword({ email: email, password: senha });
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email: email, password: senha });
 
   if(error){
     errEl.textContent = 'Email ou senha incorretos.';
@@ -150,7 +150,7 @@ async function doLogin(){
 
 async function routeAfterLogin(userId){
   // Fetch the medico record linked to this authenticated user
-  const { data: medico, error } = await supabase
+  const { data: medico, error } = await supabaseClient
     .from('medicos')
     .select('*')
     .eq('user_id', userId)
@@ -161,14 +161,14 @@ async function routeAfterLogin(userId){
     document.getElementById('login-error').style.display = 'block';
     document.getElementById('btn-login').disabled = false;
     document.getElementById('loading-msg').style.display = 'none';
-    await supabase.auth.signOut();
+    await supabaseClient.auth.signOut();
     return;
   }
 
   if(!medico.ativo){
     document.getElementById('login-error').textContent = 'Acesso inativo. Contate o administrador.';
     document.getElementById('login-error').style.display = 'block';
-    await supabase.auth.signOut();
+    await supabaseClient.auth.signOut();
     return;
   }
 
