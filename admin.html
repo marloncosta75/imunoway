@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ImunoWay — Painel Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -31,8 +32,6 @@ main{max-width:1100px;margin:0 auto;padding:28px 24px}
 .stat-card{background:#fff;border-radius:14px;padding:18px 20px;border:1px solid var(--border)}
 .stat-n{font-size:28px;font-weight:700;color:var(--text)}
 .stat-l{font-size:11.5px;color:var(--muted);margin-top:3px}
-.stat-card.green .stat-n{color:var(--green)}
-.stat-card.red .stat-n{color:var(--red)}
 .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .section-title{font-size:15px;font-weight:700}
 .btn{padding:9px 18px;border-radius:9px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .2s}
@@ -51,13 +50,11 @@ tr:hover td{background:#fafafa}
 .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
 .badge-green{background:#E1F5EE;color:var(--green)}
 .badge-red{background:#FCEBEB;color:var(--red)}
-.badge-gray{background:#f5f5f5;color:#666}
 .color-dot{width:14px;height:14px;border-radius:50%;display:inline-block;vertical-align:middle;margin-right:6px;border:1px solid rgba(0,0,0,.1)}
-/* Modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:999;display:none;align-items:center;justify-content:center}
 .modal-overlay.open{display:flex}
-.modal{background:#fff;border-radius:18px;padding:28px;width:90%;max-width:480px;max-height:90vh;overflow-y:auto}
-.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.modal{background:#fff;border-radius:18px;padding:28px;width:90%;max-width:520px;max-height:90vh;overflow-y:auto}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
 .modal-title{font-size:17px;font-weight:700}
 .modal-close{background:#f5f5f5;border:none;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px}
 .field{margin-bottom:14px}
@@ -65,16 +62,23 @@ tr:hover td{background:#fafafa}
 .field input,.field select{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:13.5px;font-family:'Inter',sans-serif;outline:none}
 .field input:focus,.field select:focus{border-color:var(--brand)}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.color-preview{width:100%;height:36px;border-radius:8px;margin-top:6px;transition:background .2s}
+.color-preview{width:100%;height:36px;border-radius:8px;margin-top:6px}
 .error-msg{background:#FCEBEB;border-radius:8px;padding:8px 12px;font-size:12px;color:#A32D2D;margin-bottom:12px;display:none}
 .success-msg{background:#E1F5EE;border-radius:8px;padding:8px 12px;font-size:12px;color:var(--green);margin-bottom:12px;display:none}
 .paletas{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-.paleta-opt{width:28px;height:28px;border-radius:7px;cursor:pointer;border:2px solid transparent;transition:border-color .2s}
-.paleta-opt:hover,.paleta-opt.selected{border-color:#333}
+.paleta-opt{width:28px;height:28px;border-radius:7px;cursor:pointer;border:2px solid transparent}
+.paleta-opt.selected{border-color:#333}
+.steps-box{background:#FFF8E1;border:1px solid #FFE082;border-radius:10px;padding:14px 16px;font-size:12.5px;color:#7A5C00;margin-bottom:16px;line-height:1.6}
+.steps-box b{display:block;margin-bottom:6px}
+.steps-box a{color:#0066CC}
+.loading-full{display:flex;align-items:center;justify-content:center;height:100vh;font-size:14px;color:var(--muted)}
 </style>
 </head>
 <body>
 
+<div id="loading-check" class="loading-full">Verificando acesso...</div>
+
+<div id="admin-content" style="display:none">
 <header>
   <div class="logo">Imuno<span>.</span>Way</div>
   <div class="header-right">
@@ -89,22 +93,10 @@ tr:hover td{background:#fafafa}
   <div class="page-sub">Gerencie todos os médicos clientes do ImunoWay</div>
 
   <div class="stats-row">
-    <div class="stat-card green">
-      <div class="stat-n" id="stat-total">—</div>
-      <div class="stat-l">Total de clientes</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-n" id="stat-ativos" style="color:var(--green)">—</div>
-      <div class="stat-l">Clientes ativos</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-n" id="stat-inativos" style="color:var(--red)">—</div>
-      <div class="stat-l">Clientes inativos</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-n" id="stat-pacientes">—</div>
-      <div class="stat-l">Total de pacientes</div>
-    </div>
+    <div class="stat-card"><div class="stat-n" id="stat-total">—</div><div class="stat-l">Total de clientes</div></div>
+    <div class="stat-card"><div class="stat-n" id="stat-ativos" style="color:var(--green)">—</div><div class="stat-l">Clientes ativos</div></div>
+    <div class="stat-card"><div class="stat-n" id="stat-inativos" style="color:var(--red)">—</div><div class="stat-l">Clientes inativos</div></div>
+    <div class="stat-card"><div class="stat-n" id="stat-pacientes">—</div><div class="stat-l">Total de pacientes</div></div>
   </div>
 
   <div class="section-header">
@@ -115,15 +107,7 @@ tr:hover td{background:#fafafa}
   <div class="table-card">
     <table>
       <thead>
-        <tr>
-          <th>Médico</th>
-          <th>Especialidade</th>
-          <th>Email</th>
-          <th>Cor</th>
-          <th>Status</th>
-          <th>Pacientes</th>
-          <th>Ações</th>
-        </tr>
+        <tr><th>Médico</th><th>Especialidade</th><th>Email</th><th>Cor</th><th>Status</th><th>Pacientes</th><th>Ações</th></tr>
       </thead>
       <tbody id="medicos-tbody">
         <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:32px">Carregando...</td></tr>
@@ -131,6 +115,7 @@ tr:hover td{background:#fafafa}
     </table>
   </div>
 </main>
+</div>
 
 <!-- Modal Novo/Editar Cliente -->
 <div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
@@ -139,9 +124,23 @@ tr:hover td{background:#fafafa}
       <div class="modal-title" id="modal-title">Novo cliente</div>
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
+
+    <div class="steps-box" id="steps-box">
+      <b>Antes de preencher — crie o login do médico:</b>
+      1. Abra o <a href="https://supabase.com/dashboard/project/nekqsuvjzwzprcsozwnr/auth/users" target="_blank">Supabase → Authentication → Users</a><br>
+      2. Clique <b>Add user → Create new user</b><br>
+      3. Preencha o email e uma senha temporária (o médico pode trocar depois)<br>
+      4. Marque <b>Auto Confirm User</b> e clique em criar<br>
+      5. Copie o <b>User UID</b> gerado e cole abaixo
+    </div>
+
     <div class="error-msg" id="modal-error"></div>
     <div class="success-msg" id="modal-success"></div>
 
+    <div class="field">
+      <label>User UID (copiado do Supabase Authentication) *</label>
+      <input type="text" id="f-userid" placeholder="ex: 3f9b1c2a-... " style="font-family:monospace;font-size:12px">
+    </div>
     <div class="field">
       <label>Nome completo *</label>
       <input type="text" id="f-nome" placeholder="Dra. Maria Silva">
@@ -152,29 +151,18 @@ tr:hover td{background:#fafafa}
         <input type="text" id="f-spec" placeholder="Imunologia e Alergia">
       </div>
       <div class="field">
-        <label>PIN / Senha de acesso *</label>
-        <input type="text" id="f-pin" placeholder="ex: 38701">
+        <label>Email de acesso *</label>
+        <input type="email" id="f-email" placeholder="medico@clinica.com.br">
       </div>
-    </div>
-    <div class="field">
-      <label>Email de acesso *</label>
-      <input type="email" id="f-email" placeholder="medico@clinica.com.br">
     </div>
 
     <div class="field">
       <label>Paleta de cores</label>
       <div class="paletas" id="paletas-grid"></div>
     </div>
-
     <div class="field-row" style="margin-top:12px">
-      <div class="field">
-        <label>Cor principal (brand)</label>
-        <input type="color" id="f-brand" value="#C4522A" oninput="updatePreview()">
-      </div>
-      <div class="field">
-        <label>Cor do sidebar (navy)</label>
-        <input type="color" id="f-navy" value="#2C1810" oninput="updatePreview()">
-      </div>
+      <div class="field"><label>Cor principal</label><input type="color" id="f-brand" value="#C4522A" oninput="updatePreview()"></div>
+      <div class="field"><label>Cor do sidebar</label><input type="color" id="f-navy" value="#2C1810" oninput="updatePreview()"></div>
     </div>
     <div class="color-preview" id="color-preview"></div>
 
@@ -188,18 +176,10 @@ tr:hover td{background:#fafafa}
 <script>
 const SUPA_URL = 'https://nekqsuvjzwzprcsozwnr.supabase.co';
 const SUPA_KEY = 'sb_publishable_cItO3Ib9OUn1SibZYsykgA_4RiXOLB8';
+const supabase = window.supabase.createClient(SUPA_URL, SUPA_KEY);
 
-// Check admin session
-var session;
-try { session = JSON.parse(localStorage.getItem('iw_session')); } catch(e){}
-if(!session || !session.is_admin || session.expires < Date.now()){
-  window.location.href = 'index.html';
-}
-document.getElementById('admin-name').textContent = session.nome;
+var _session, medicosData = [], _editingId = null;
 
-function logout(){ localStorage.removeItem('iw_session'); window.location.href='index.html'; }
-
-// Paletas predefinidas
 var PALETAS = [
   {brand:'#C4522A',navy:'#2C1810',label:'Terracota'},
   {brand:'#0F766E',navy:'#134E4A',label:'Verde-água'},
@@ -211,72 +191,134 @@ var PALETAS = [
   {brand:'#BE185D',navy:'#3D0927',label:'Rosa'},
 ];
 
-var _editingId = null;
-var medicosData = [];
+// ── Auth check ──────────────────────────────────────────────
+(async function init(){
+  const { data: { session } } = await supabase.auth.getSession();
+  if(!session){ window.location.href = 'index.html'; return; }
 
-// Load medicos on start
-loadMedicos();
+  const { data: medico, error } = await supabase.from('medicos').select('*').eq('user_id', session.user.id).single();
+  if(error || !medico || !medico.is_admin){
+    await supabase.auth.signOut();
+    window.location.href = 'index.html';
+    return;
+  }
+
+  _session = medico;
+  document.getElementById('admin-name').textContent = medico.nome;
+  document.getElementById('loading-check').style.display = 'none';
+  document.getElementById('admin-content').style.display = 'block';
+  loadMedicos();
+})();
+
+function logout(){
+  supabase.auth.signOut().then(function(){ window.location.href='index.html'; });
+}
 
 async function loadMedicos(){
-  try{
-    var res = await fetch(SUPA_URL+'/rest/v1/medicos?select=*,pacientes(count)&order=criado_em.desc', {
-      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
-    });
-    medicosData = await res.json();
-    renderTable(medicosData);
-    updateStats(medicosData);
-  }catch(e){
+  const { data, error } = await supabase.from('medicos').select('*, pacientes(count)').order('criado_em', {ascending:false});
+  if(error){
     document.getElementById('medicos-tbody').innerHTML =
-      '<tr><td colspan="7" style="text-align:center;color:#A32D2D;padding:24px">Erro ao carregar: '+e.message+'</td></tr>';
+      '<tr><td colspan="7" style="text-align:center;color:#A32D2D;padding:24px">Erro: '+error.message+'</td></tr>';
+    return;
   }
+  medicosData = data;
+  renderTable(data);
+  updateStats(data);
 }
 
 function updateStats(data){
-  var ativos   = data.filter(function(m){ return m.ativo; }).length;
-  var inativos = data.length - ativos;
+  var ativos = data.filter(function(m){ return m.ativo; }).length;
   var totalPts = data.reduce(function(acc,m){ return acc+(m.pacientes?m.pacientes[0]?.count||0:0); },0);
-  document.getElementById('stat-total').textContent    = data.length;
-  document.getElementById('stat-ativos').textContent   = ativos;
-  document.getElementById('stat-inativos').textContent = inativos;
+  document.getElementById('stat-total').textContent = data.length;
+  document.getElementById('stat-ativos').textContent = ativos;
+  document.getElementById('stat-inativos').textContent = data.length - ativos;
   document.getElementById('stat-pacientes').textContent = totalPts;
 }
 
 function renderTable(data){
   var tb = document.getElementById('medicos-tbody');
+  tb.innerHTML = '';
   if(!data.length){
-    tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:32px">Nenhum cliente cadastrado ainda.</td></tr>';
+    var trEmpty = document.createElement('tr');
+    trEmpty.innerHTML = '<td colspan="7" style="text-align:center;color:var(--muted);padding:32px">Nenhum cliente cadastrado.</td>';
+    tb.appendChild(trEmpty);
     return;
   }
-  tb.innerHTML = data.map(function(m){
-    var pts = m.pacientes ? (m.pacientes[0]?.count||0) : '—';
-    return '<tr>'+
-      '<td><strong>'+m.nome+'</strong></td>'+
-      '<td style="color:var(--muted);font-size:12px">'+m.especialidade+'</td>'+
-      '<td style="font-size:12px">'+m.email+'</td>'+
-      '<td><span class="color-dot" style="background:'+m.cor_brand+'"></span>'+m.cor_brand+'</td>'+
-      '<td><span class="badge '+(m.ativo?'badge-green':'badge-red')+'">'+(m.ativo?'Ativo':'Inativo')+'</span></td>'+
-      '<td style="font-weight:600">'+pts+'</td>'+
-      '<td style="display:flex;gap:6px">'+
-        '<button class="btn btn-sm btn-secondary" onclick="editCliente(\''+m.id+'\')">✏️ Editar</button>'+
-        '<button class="btn btn-sm '+(m.ativo?'btn-red':'btn-green')+'" onclick="toggleAtivo(\''+m.id+'\','+m.ativo+')">'+(m.ativo?'Desativar':'Ativar')+'</button>'+
-      '</td>'+
-    '</tr>';
-  }).join('');
+  data.forEach(function(m){
+    var pts = m.pacientes ? (m.pacientes[0] && m.pacientes[0].count || 0) : '—';
+    var tr = document.createElement('tr');
+
+    var tdNome = document.createElement('td');
+    tdNome.innerHTML = '<strong></strong>';
+    tdNome.querySelector('strong').textContent = m.nome;
+
+    var tdSpec = document.createElement('td');
+    tdSpec.style.cssText = 'color:var(--muted);font-size:12px';
+    tdSpec.textContent = m.especialidade || '';
+
+    var tdEmail = document.createElement('td');
+    tdEmail.style.fontSize = '12px';
+    tdEmail.textContent = m.email;
+
+    var tdCor = document.createElement('td');
+    var dot = document.createElement('span');
+    dot.className = 'color-dot';
+    dot.style.background = m.cor_brand;
+    tdCor.appendChild(dot);
+    tdCor.appendChild(document.createTextNode(m.cor_brand));
+
+    var tdStatus = document.createElement('td');
+    var badge = document.createElement('span');
+    badge.className = 'badge ' + (m.ativo ? 'badge-green' : 'badge-red');
+    badge.textContent = m.ativo ? 'Ativo' : 'Inativo';
+    tdStatus.appendChild(badge);
+
+    var tdPts = document.createElement('td');
+    tdPts.style.fontWeight = '600';
+    tdPts.textContent = pts;
+
+    var tdActions = document.createElement('td');
+    tdActions.style.cssText = 'display:flex;gap:6px';
+
+    var btnEdit = document.createElement('button');
+    btnEdit.className = 'btn btn-sm btn-secondary';
+    btnEdit.textContent = '\u270F\uFE0F Editar';
+    btnEdit.onclick = function(){ editCliente(m.id); };
+
+    var btnToggle = document.createElement('button');
+    btnToggle.className = 'btn btn-sm ' + (m.ativo ? 'btn-red' : 'btn-green');
+    btnToggle.textContent = m.ativo ? 'Desativar' : 'Ativar';
+    btnToggle.onclick = function(){ toggleAtivo(m.id, m.ativo); };
+
+    tdActions.appendChild(btnEdit);
+    tdActions.appendChild(btnToggle);
+
+    tr.appendChild(tdNome);
+    tr.appendChild(tdSpec);
+    tr.appendChild(tdEmail);
+    tr.appendChild(tdCor);
+    tr.appendChild(tdStatus);
+    tr.appendChild(tdPts);
+    tr.appendChild(tdActions);
+
+    tb.appendChild(tr);
+  });
 }
 
 function openNewModal(){
   _editingId = null;
   document.getElementById('modal-title').textContent = 'Novo cliente';
+  document.getElementById('steps-box').style.display = 'block';
+  document.getElementById('f-userid').value = '';
+  document.getElementById('f-userid').disabled = false;
   document.getElementById('f-nome').value  = '';
   document.getElementById('f-spec').value  = '';
-  document.getElementById('f-pin').value   = '';
   document.getElementById('f-email').value = '';
   document.getElementById('f-brand').value = '#C4522A';
   document.getElementById('f-navy').value  = '#2C1810';
   document.getElementById('modal-error').style.display   = 'none';
   document.getElementById('modal-success').style.display = 'none';
-  buildPaletas();
-  updatePreview();
+  buildPaletas(); updatePreview();
   document.getElementById('modal-overlay').classList.add('open');
 }
 
@@ -285,16 +327,17 @@ function editCliente(id){
   if(!m) return;
   _editingId = id;
   document.getElementById('modal-title').textContent = 'Editar cliente';
+  document.getElementById('steps-box').style.display = 'none';
+  document.getElementById('f-userid').value = m.user_id || '';
+  document.getElementById('f-userid').disabled = true;
   document.getElementById('f-nome').value  = m.nome||'';
   document.getElementById('f-spec').value  = m.especialidade||'';
-  document.getElementById('f-pin').value   = m.pin||'';
   document.getElementById('f-email').value = m.email||'';
   document.getElementById('f-brand').value = m.cor_brand||'#C4522A';
   document.getElementById('f-navy').value  = m.cor_navy||'#2C1810';
   document.getElementById('modal-error').style.display   = 'none';
   document.getElementById('modal-success').style.display = 'none';
-  buildPaletas();
-  updatePreview();
+  buildPaletas(); updatePreview();
   document.getElementById('modal-overlay').classList.add('open');
 }
 
@@ -302,77 +345,67 @@ function closeModal(){ document.getElementById('modal-overlay').classList.remove
 
 function buildPaletas(){
   var brand = document.getElementById('f-brand').value;
-  var html = PALETAS.map(function(p){
-    var sel = p.brand===brand ? ' selected' : '';
-    return '<div class="paleta-opt'+sel+'" style="background:'+p.brand+'" title="'+p.label+'" onclick="selectPaleta(\''+p.brand+'\',\''+p.navy+'\')"></div>';
-  }).join('');
-  document.getElementById('paletas-grid').innerHTML = html;
+  var grid = document.getElementById('paletas-grid');
+  grid.innerHTML = '';
+  PALETAS.forEach(function(p){
+    var opt = document.createElement('div');
+    opt.className = 'paleta-opt' + (p.brand===brand ? ' selected' : '');
+    opt.style.background = p.brand;
+    opt.title = p.label;
+    opt.onclick = function(){ selectPaleta(p.brand, p.navy); };
+    grid.appendChild(opt);
+  });
 }
-
 function selectPaleta(brand, navy){
   document.getElementById('f-brand').value = brand;
   document.getElementById('f-navy').value  = navy;
-  updatePreview();
-  buildPaletas();
+  updatePreview(); buildPaletas();
 }
-
 function updatePreview(){
-  var brand = document.getElementById('f-brand').value;
-  var navy  = document.getElementById('f-navy').value;
-  document.getElementById('color-preview').style.background =
-    'linear-gradient(135deg,'+navy+' 0%,'+brand+' 100%)';
+  var brand = document.getElementById('f-brand').value, navy = document.getElementById('f-navy').value;
+  document.getElementById('color-preview').style.background = 'linear-gradient(135deg,'+navy+' 0%,'+brand+' 100%)';
 }
 updatePreview();
 
 async function saveCliente(){
+  var userId= document.getElementById('f-userid').value.trim();
   var nome  = document.getElementById('f-nome').value.trim();
   var spec  = document.getElementById('f-spec').value.trim();
-  var pin   = document.getElementById('f-pin').value.trim();
   var email = document.getElementById('f-email').value.trim();
   var brand = document.getElementById('f-brand').value;
   var navy  = document.getElementById('f-navy').value;
   var errEl = document.getElementById('modal-error');
   var sucEl = document.getElementById('modal-success');
+  errEl.style.display = 'none'; sucEl.style.display = 'none';
 
-  errEl.style.display = 'none';
-  sucEl.style.display = 'none';
-
-  if(!nome||!spec||!pin||!email){ errEl.textContent='Preencha todos os campos obrigatórios.'; errEl.style.display='block'; return; }
-
-  var body = {nome:nome,especialidade:spec,pin:pin,email:email,cor_brand:brand,cor_navy:navy,ativo:true};
-
-  try{
-    var res;
-    if(_editingId){
-      res = await fetch(SUPA_URL+'/rest/v1/medicos?id=eq.'+_editingId, {
-        method:'PATCH',
-        headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
-        body:JSON.stringify(body)
-      });
-    } else {
-      res = await fetch(SUPA_URL+'/rest/v1/medicos', {
-        method:'POST',
-        headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
-        body:JSON.stringify(body)
-      });
-    }
-    if(!res.ok){ var err=await res.text(); throw new Error(err); }
-    sucEl.textContent = _editingId ? 'Cliente atualizado!' : 'Cliente criado com sucesso! Ele já pode fazer login.';
-    sucEl.style.display='block';
-    setTimeout(function(){ closeModal(); loadMedicos(); }, 1500);
-  }catch(e){
-    errEl.textContent = 'Erro: '+e.message;
-    errEl.style.display='block';
+  if(!nome||!spec||!email||(!_editingId && !userId)){
+    errEl.textContent='Preencha todos os campos obrigatórios.'; errEl.style.display='block'; return;
   }
+
+  var body = {nome:nome, especialidade:spec, email:email, cor_brand:brand, cor_navy:navy, ativo:true};
+  if(!_editingId) body.user_id = userId;
+
+  var res;
+  if(_editingId){
+    res = await supabase.from('medicos').update(body).eq('id', _editingId);
+  } else {
+    res = await supabase.from('medicos').insert(body);
+  }
+
+  if(res.error){
+    errEl.textContent = 'Erro: '+res.error.message;
+    errEl.style.display='block';
+    return;
+  }
+
+  sucEl.textContent = _editingId ? 'Cliente atualizado!' : 'Cliente criado! Ele já pode fazer login.';
+  sucEl.style.display='block';
+  setTimeout(function(){ closeModal(); loadMedicos(); }, 1500);
 }
 
 async function toggleAtivo(id, ativo){
   if(!confirm(ativo?'Desativar este cliente?':'Ativar este cliente?')) return;
-  await fetch(SUPA_URL+'/rest/v1/medicos?id=eq.'+id, {
-    method:'PATCH',
-    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
-    body:JSON.stringify({ativo:!ativo})
-  });
+  await supabase.from('medicos').update({ativo: !ativo}).eq('id', id);
   loadMedicos();
 }
 </script>
